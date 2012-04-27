@@ -32,6 +32,18 @@
 
 var PROTO = {};
 
+PROTO.IsArray = (function() {
+  if (typeof(Uint8Array) != "undefined") {
+    return function(arr) {
+      return arr instanceof Array || arr instanceof Uint8Array;
+    };
+  } else {
+    return function(arr) {
+      return arr instanceof Array;
+    };
+  }
+})();
+
 PROTO.DefineProperty = (function () {
         var DefineProperty;
         if (typeof(Object.defineProperty) != "undefined") {
@@ -689,6 +701,14 @@ PROTO.Uint8ArrayStream.prototype.getArray = function() {
     return this.array_.subarray(0, this.write_pos_);
 };
 
+PROTO.CreateArrayStream = function(arr) {
+  if (arr instanceof Array) {
+    return new PROTO.ByteArrayStream(arr);
+  } else {
+    return new PROTO.Uint8ArrayStream(arr);
+  }
+};
+
 /**
  * @constructor
  * @param {string=} b64string  String to read from, or append to.
@@ -916,7 +936,7 @@ PROTO.array =
         function ProtoArray(datatype, input) {
             this.datatype_ = datatype.type();
             this.length = 0;
-            if (input instanceof Array) {
+            if (PROTO.IsArray(input)) {
                 for (var i=0;i<input.length;++i) {
                     this.push(input[i]);
                 }
@@ -984,7 +1004,7 @@ PROTO.string = {
 
 PROTO.bytes = {
     Convert: function(arr) {
-        if (arr instanceof Array) {
+        if (PROTO.IsArray(arr)) {
             return arr;
         } else if (arr instanceof PROTO.ByteArrayStream) {
             return arr.getArray();
@@ -1258,7 +1278,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
                         tup = incompleteTuples[nextpropname];
                     }
                     var bytearr = PROTO.bytes.ParseFromStream(stream);
-                    var bas = new PROTO.ByteArrayStream(bytearr);
+                    var bas = PROTO.CreateArrayStream(bytearr);
                     for (var j = 0; j < bytearr.length && bas.valid(); j++) {
                         var toappend = nextproptype.ParseFromStream(bas);
 
@@ -1467,7 +1487,7 @@ PROTO.Message = function(name, properties) {
     };
     Composite.ParseFromStream = function(stream) {
         var bytearr = PROTO.bytes.ParseFromStream(stream);
-        var bas = new PROTO.ByteArrayStream(bytearr);
+        var bas = PROTO.CreateArrayStream(bytearr);
         var ret = new Composite;
         ret.ParseFromStream(bas);
         return ret;
@@ -1536,7 +1556,7 @@ PROTO.Message = function(name, properties) {
             return stream.getArray();
         },
         MergeFromArray: function (array) {
-            return this.MergeFromStream(new PROTO.ByteArrayStream(array));
+            return this.MergeFromStream(PROTO.CreateArrayStream(array));
         },
         ParseFromArray: function (array) {
             this.Clear();

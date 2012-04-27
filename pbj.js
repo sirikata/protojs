@@ -190,7 +190,7 @@ PBJ.time.FromProto = function(i64) {
 
     PBJ.sha256 = PROTO.cloneType(PROTO.bytes);
     PBJ.sha256.Convert = function(arg) {
-        if (arg instanceof Array) {
+        if (PROTO.IsArray(arg)) {
             return PROTO.bytes.Convert(arg);
         }
         return hexToArray(arg, 32);
@@ -212,7 +212,7 @@ PBJ.time.FromProto = function(i64) {
 
     PBJ.uuid = PROTO.cloneType(PROTO.bytes);
     PBJ.uuid.Convert = function(arg) {
-        if (arg instanceof Array) {
+        if (PROTO.IsArray(arg)) {
             return PROTO.bytes.Convert(arg);
         }
         return hexToArray(arg, 16);
