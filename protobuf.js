@@ -898,24 +898,26 @@ if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
 	var useBlobCons = false;
 	var BlobBuilder = null;
 	var slice = "slice";
+	var testBlob;
 	try {
-	    new Blob([new ArrayBuffer(1)]);
+	    testBlob = new self.Blob([new ArrayBuffer(1)]);
 	    useBlobCons = true;
 	} catch (e) {
-	    BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder ||
-		window.MozBlobBuilder || window.MSBlobBuilder;
-	    if (Blob.prototype.webkitSlice) {
+	    BlobBuilder = self.BlobBuilder || self.WebKitBlobBuilder ||
+		self.MozBlobBuilder || self.MSBlobBuilder;
+	    testBlob = new BlobBuilder().getBlob();
+	}
+	if (testBlob && (useBlobCons || BlobBuilder)) {
+	    if (testBlob.webkitSlice) {
 		slice = "webkitSlice";
 	    }
-	    if (Blob.prototype.mozSlice) {
+	    if (testBlob.mozSlice) {
 		slice = "mozSlice";
 	    }
-	}
-	if (useBlobCons || BlobBuilder) {
 	    PROTO.ArrayBufferStream.prototype.getBlob = function() {
 		var fullBlob;
 		if (useBlobCons) {
-		    fullBlob = new Blob([this.array_buffer_]);
+		    fullBlob = new self.Blob([this.array_buffer_]);
 		} else {
 		    var blobBuilder = new BlobBuilder();
 		    blobBuilder.append(this.array_buffer_);
