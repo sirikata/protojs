@@ -30,6 +30,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+function blobToString(blob, func) {
+    var reader = new FileReader();
+    reader.onloadend = function() {
+	func(reader.result);
+    };
+    reader.readAsText(blob);
+};
+
 window.onload = function() {
   var my64 = new PROTO.I64(2147483647,4294967295,-1);
   var oneHundred = new PROTO.I64(1,100,1);//4294967396
@@ -106,6 +114,34 @@ try {
   output.value += extmsg;
   extmsg.SerializeToStream(b64stream);
   extmsg.SerializeToStream(stream);
+
+  if (PROTO.ArrayBufferStream) {
+    var buf = new ArrayBuffer(32);
+    var bufstream = new PROTO.ArrayBufferStream(buf);
+    extmsg.SerializeToStream(bufstream);
+    var serializedbuf = bufstream.getArrayBuffer();
+    var len = bufstream.length();
+    var serializedbufstream = new PROTO.ArrayBufferStream(serializedbuf, len);
+    var decodedbufmsg = new ProtoJSTest.PB.TestMessage;
+    decodedbufmsg.ParseFromStream(bufstream);
+    if (bufstream.getBlob) {
+	try {
+	    blobToString(bufstream.getBlob(), function(data) {
+		    output.value += "\n TestMessage encoded with ArrayBuffer is: \n" +
+			data + "\n";
+		});
+	} catch (e) {
+	    output.value += "Aww. FileReader is not supported. Sorry!" + e;
+	}
+    } else {
+	output.value += "Aww. Blob.slice is not supported. Sorry!";
+    }
+    output.value += "\n TestMessage decoded with ArrayBuffer is: \n" +
+	decodedbufmsg + "\n";
+  } else {
+    output.value += "*** Not testing ArrayBufferStream: not supported in this browser\n";
+  }
+
   output.value += "\n TestMessage encoded is:\n["+arr2+"]\n";
   output.value += "\n TestMessage base64'ed is:\n"+b64stream.getString()+"\n";
   var decodedmsg = new ProtoJSTest.PB.TestMessage;

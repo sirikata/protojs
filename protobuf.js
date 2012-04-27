@@ -767,6 +767,108 @@ PROTO.ByteArrayStream.prototype.getArray = function() {
     };
 })();
 
+if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
+    PROTO.ArrayBufferStream = function(arr, length) {
+	this.array_buffer_ = arr || new ArrayBuffer(1024);
+	this.length_ = length || 0;
+	this.array_ = new Uint8Array(this.array_buffer_);
+	this.read_pos = 0;
+    };
+    PROTO.ArrayBufferStream.prototype = new PROTO.Stream();
+    PROTO.ArrayBufferStream.prototype._realloc = function(min_length) {
+	var old_array = this.array_;
+	var length = this.length_;
+	var new_buf_length = old_array.length + min_length;
+	this.array_buffer_ = new ArrayBuffer(new_buf_length);
+	var new_array = new Uint8Array(this.array_buffer_);
+	for (var i = 0; i < length; i++) {
+	    new_array[i] = old_array[i];
+	}
+	this.array_ = new_array;
+    };
+    PROTO.ArrayBufferStream.prototype.read = function(amt) {
+	if (this.read_pos_+amt > this.length_) {
+	    // incomplete stream.
+	    //throw new Error("Read past end of protobuf ArrayBufferStream: "+
+	    //                this.array_.length+" < "+this.read_pos_+amt);
+	    return null;
+	}
+	var ret = this.array_.subarray(this.read_pos_, this.read_pos_+amt);
+	this.read_pos_ += amt;
+	// FIXME
+	var ret_as_array = new Array(amt);
+	for (var i = 0; i < amt; i++) {
+	    ret_as_array[i] = ret[i];
+	}
+	return ret_as_array;
+    };
+    PROTO.ArrayBufferStream.prototype.write = function(arr) {
+	var si = 0;
+	var di = this.length_;
+	if (this.length_ + arr.length > this.array_.length) {
+	    this._realloc(this.length_ + arr.length);
+	}
+	this.length_ += arr.length;
+	var dest = this.array_;
+	var len = arr.length;
+	for (;si < len; si++,di++) {
+	    dest[di] = arr[si];
+	}
+    };
+    PROTO.ArrayBufferStream.prototype.readByte = function() {
+	return this.array_[this.read_pos_ ++];
+    };
+    PROTO.ArrayBufferStream.prototype.writeByte = function(byt) {
+	if (this.length_ == this.array_.length) {
+	    this._realloc(this.length_ + 1);
+	}
+	this.array_[this.length_ ++] = byt;
+    };
+    PROTO.ArrayBufferStream.prototype.valid = function() {
+	return this.read_pos_ < this.length_;
+    };
+    PROTO.ArrayBufferStream.prototype.getArrayBuffer = function() {
+	return this.array_buffer_;
+    };
+    PROTO.ArrayBufferStream.prototype.length = function() {
+	return this.length_;
+    };
+    (function() {
+	var useBlobCons = false;
+	var BlobBuilder = null;
+	var slice = "slice";
+	try {
+	    new Blob([new ArrayBuffer(1)]);
+	    useBlobCons = true;
+	} catch (e) {
+	    BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder ||
+		window.MozBlobBuilder || window.MSBlobBuilder;
+	    if (Blob.prototype.webkitSlice) {
+		slice = "webkitSlice";
+	    }
+	    if (Blob.prototype.mozSlice) {
+		slice = "mozSlice";
+	    }
+	}
+	if (useBlobCons || BlobBuilder) {
+	    PROTO.ArrayBufferStream.prototype.getBlob = function() {
+		var fullBlob;
+		if (useBlobCons) {
+		    fullBlob = new Blob([this.array_buffer_]);
+		} else {
+		    var blobBuilder = new BlobBuilder();
+		    blobBuilder.append(this.array_buffer_);
+		    var fullBlob = blobBuilder.getBlob();
+		}
+		return fullBlob[slice](0, this.length_);
+	    };
+	}
+    }());
+    PROTO.ArrayBufferStream.prototype.getUint8Array = function() {
+	return new Uint8Array(this.array_buffer_, 0, this.length_);
+    };
+}
+
 PROTO.array =
     (function() {
         /** @constructor */
