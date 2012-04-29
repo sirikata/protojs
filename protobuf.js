@@ -320,7 +320,8 @@ PROTO.I64.fromNumber = function(mynum) {
 PROTO.I64.from32pair = function(msw, lsw, sign) {
     return new PROTO.I64(msw, lsw, sign);
 };
-PROTO.I64.parseLEVar128 = function (stream) {
+PROTO.I64.parseLEVar128 = function (stream, float64toassignto) {
+    var retval = float64toassignto||new PROTO.I64(0,0,1);
     var n = 0;
     var endloop = false;
     var offset=1;
@@ -347,10 +348,14 @@ PROTO.I64.parseLEVar128 = function (stream) {
         msw += offset*byt;
         offset *= 128;
     }
-    return new PROTO.I64(msw%4294967296,lsw,1);
+    retval.msw=msw%4294967296;
+    retval.lsw=lsw;
+    retval.sign=1;
+    return retval;
 };
 
-PROTO.I64.parseLEBase256 = function (stream) {
+PROTO.I64.parseLEBase256 = function (stream, float64toassignto) {
+    var retval = float64toassignto||new PROTO.I64(0,0,1);
     var n = 0;
     var endloop = false;
     var offset=1;
@@ -367,7 +372,10 @@ PROTO.I64.parseLEBase256 = function (stream) {
         msw += offset*byt;
         offset *= 256;
     }
-    return new PROTO.I64(msw,lsw,1);
+    retval.msw=msw;
+    retval.lsw=lsw;
+    retval.sign=1;
+    return retval;
 };
 
 PROTO.I64.ONE = new PROTO.I64.fromNumber(1);
@@ -1162,14 +1170,16 @@ PROTO.bytes = {
         }
         return n;
     };
+    var temp64num = new PROTO.I64(0,0,1);
     function parseInt32(stream) {
-        var n = parseUInt32(stream);//snag the first 4 bytes
-        if (n > 2147483647) {
-            n -= 2147483647;
-            n -= 2147483647;
-            n -= 2;
+        var n = parseUInt64(stream,temp64num);//snag the first 4 bytes
+        var lsw=n.lsw;
+        if (lsw > 2147483647) {
+            lsw -= 2147483647;
+            lsw -= 2147483647;
+            lsw -= 2;
         }
-        return n;
+        return lsw;
     };
     function parseSInt32(stream) {
         var n = parseUInt32(stream);
@@ -1208,16 +1218,16 @@ PROTO.bytes = {
         stream.write(n.serializeToLEBase256());
     }
     function parseSFixed64(stream) {
-        return PROTO.I64.parseLEBase256(stream).convertFromUnsigned();
+        return PROTO.I64.parseLEBase256(stream,temp64num).convertFromUnsigned();
     }
     function parseFixed64(stream) {
         return PROTO.I64.parseLEBase256(stream);
     }
     function parseSInt64(stream) {
-        return PROTO.I64.parseLEVar128(stream).convertFromZigzag();
+        return PROTO.I64.parseLEVar128(stream,temp64num).convertFromZigzag();
     }
     function parseInt64(stream) {
-        return PROTO.I64.parseLEVar128(stream).convertFromUnsigned();
+        return PROTO.I64.parseLEVar128(stream,temp64num).convertFromUnsigned();
     }
     function parseUInt64(stream) {
         return PROTO.I64.parseLEVar128(stream);
