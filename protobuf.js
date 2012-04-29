@@ -154,10 +154,14 @@ PROTO.I64.prototype = {
         if (this.sign<0) {
             local_msw=2147483647-this.msw;
             local_msw+=2147483647;
-            local_msw+=2;
+            local_msw+=1;
             local_lsw=2147483647-this.lsw;
             local_lsw+=2147483647;
             local_lsw+=2;
+            if (local_lsw==4294967296) {
+                local_lsw=0;
+                local_msw+=1;
+            }
         }else {
             local_msw=this.msw;
         }
@@ -165,14 +169,20 @@ PROTO.I64.prototype = {
     },
     convertFromUnsigned:function() {
         if(this.msw>=2147483648) {
-            return new PROTO.I64(this.msw-2147483648,this.lsw,-1);
+            var local_msw = 4294967295-this.msw;
+            var local_lsw = 4294967295-this.lsw+1;
+            if (local_lsw>4294967295) {
+                local_lsw-=4294967296;
+                local_msw+=1;
+            }
+            return new PROTO.I64(local_msw,local_lsw,-1);
         }
-        return new PROTO.I64(this.msw,this.lsw,1);
+        return new PROTO.I64(this.msw,this.lsw,this.sign);
     },
     convertToZigzag: function() {
         var local_lsw;
         if (this.sign<0) {
-            local_lsw=this.lsw*2+1;
+            local_lsw=this.lsw*2-1;
         }else {
             local_lsw=this.lsw*2;
         }
@@ -181,17 +191,31 @@ PROTO.I64.prototype = {
             local_msw+=1;
             local_lsw-=4294967296;
         }
+        if (local_lsw<0){
+            local_msw-=1;
+            local_lsw+=4294967296;
+        }
         return new PROTO.I64(local_msw,local_lsw,1);
     },
     convertFromZigzag:function() {
-        if(this.msw&1) {
-            return new PROTO.I64((this.msw>>>1),
+        var retval;
+        if(this.msw&1) {//carry the bit from the most significant to the least by adding 2^31 to lsw
+            retval = new PROTO.I64((this.msw>>>1),
                                  2147483648+(this.lsw>>>1),
                                  (this.lsw&1)?-1:1);
+        } else {
+            retval = new PROTO.I64((this.msw>>>1),
+                                   (this.lsw>>>1),
+                                   (this.lsw&1)?-1:1);
         }
-        return new PROTO.I64((this.msw>>>1),
-                             (this.lsw>>>1),
-                             (this.lsw&1)?-1:1);
+        if (retval.sign==-1) {
+            retval.lsw+=1;
+            if (retval.lsw>4294967295) {
+                retval.msw+=1;
+                retval.lsw-=4294967296;                
+            }
+        }
+        return retval;
     },
     serializeToLEBase256: function() {
         var arr = new Array(8);
@@ -234,7 +258,7 @@ PROTO.I64.prototype = {
         var local_msw=this.msw+other.msw;
         var local_lsw=temp%4294967296;
         temp-=local_lsw;
-        local_msw+=temp/4294967296;
+        local_msw+=Math.floor(temp/4294967296);
         return new PROTO.I64(local_msw,local_lsw,this.sign);
     },
     sub : function(other) {
@@ -289,7 +313,7 @@ PROTO.I64.fromNumber = function(mynum) {
     var sign = (mynum < 0) ? -1 : 1;
     mynum *= sign;
     var lsw = (mynum%4294967296);
-    var msw = ((mynum-lsw)/4294967296);
+    var msw = Math.floor((mynum-lsw)/4294967296);
     return new PROTO.I64(msw, lsw, sign);
 };
 
@@ -311,7 +335,7 @@ PROTO.I64.parseLEVar128 = function (stream) {
         offset *= 128;
     }
     var lsw=n%4294967296
-    var msw = 0;    
+    var msw = Math.floor((n - lsw) / 4294967296);   
     offset=8;
     for (var i = 0; !endloop && i < 5; i++) {
         var byt = stream.readByte();
@@ -905,7 +929,11 @@ if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
 	} catch (e) {
 	    BlobBuilder = self.BlobBuilder || self.WebKitBlobBuilder ||
 		self.MozBlobBuilder || self.MSBlobBuilder;
-	    testBlob = new BlobBuilder().getBlob();
+        try {
+	        testBlob = new BlobBuilder().getBlob();
+        }catch (e) {
+            //in a worker in FF or blobs not supported
+        }
 	}
 	if (testBlob && (useBlobCons || BlobBuilder)) {
 	    if (testBlob.webkitSlice) {
@@ -1168,10 +1196,10 @@ PROTO.bytes = {
         stream.write(n.convertToUnsigned().serializeToLEVar128());
     }
     function serializeSInt64(n, stream) {
-        stream.write(n.convertToZigzag().serializeToLEVar128());
+        stream.write(n.convertFromUnsigned().convertToZigzag().serializeToLEVar128());
     }
     function serializeUInt64(n, stream) {
-        stream.write(n.serializeToLEVar128());
+        stream.write(n.convertToUnsigned().serializeToLEVar128());
     }
     function serializeSFixed64(n, stream) {
         stream.write(n.convertToUnsigned().serializeToLEBase256());

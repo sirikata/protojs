@@ -53,6 +53,16 @@ message TestMessage {
   optional uint32 xxu32=22;
   optional int32 xxi32=37;
   optional sint32 xxsi32=38;
+
+  optional uint64 xxu64=22999;
+  optional int64 xxi64=37999;
+  optional sint64 xxsi64=38999;
+
+  optional uint64 nnu64=2299988;
+  optional int64 nni64=3799988;
+  optional sint64 nnsi64=3899988;
+
+
   optional string xxs=23;
   optional bytes xxb=24;
   repeated string xxss=25;

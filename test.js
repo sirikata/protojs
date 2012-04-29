@@ -39,18 +39,31 @@ function blobToString(blob, func) {
 };
 
 window.onload = function() {
+
+  var bigPositive = new PROTO.I64(4294967295,4294967295,1);
+
   var my64 = new PROTO.I64(2147483647,4294967295,-1);
+  var my64min = new PROTO.I64(2147483648,0,-1);
+  var negOne = new PROTO.I64(0,1,-1);
   var oneHundred = new PROTO.I64(1,100,1);//4294967396
   var twoTen = new PROTO.I64(2,10,1);//8589934602
   var NoneHundred = new PROTO.I64(1,100,-1);//4294967396
   var NtwoTen = new PROTO.I64(2,10,-1);//8589934602
   var unsigned64 = my64.convertToUnsigned();
+  var unsigned64min = my64min.convertToUnsigned();
+  var unsignednegOne = negOne.convertToUnsigned();
   var zigzag64 = my64.convertToZigzag();
+  var zigzagmy64min = my64min.convertToZigzag();
+  var zigzagnegOne = negOne.convertToZigzag();
   var output = document.getElementById('output');
   output.value += "" + my64.msw+","+my64.lsw+"\n";
   output.value += "Parts " + my64.msw+","+my64.lsw+"\n";
   output.value += "UParts " + unsigned64.msw+","+unsigned64.lsw+"\n";
+  output.value += "UMinimumParts " + unsigned64min.msw+","+unsigned64min.lsw+"\n";
+  output.value += "UNegOne " + unsignednegOne.msw+","+unsignednegOne.lsw+"\n";
   output.value += "ZZParts " + zigzag64.msw+","+zigzag64.lsw+"\n";
+  output.value += "ZZMinimumParts " + zigzagmy64min.msw+","+zigzagmy64min.lsw+"\n";
+  output.value += "ZZNegOne " + zigzagnegOne.msw+","+zigzagnegOne.lsw+"\n";
   output.value += "Unsigned Num: "+unsigned64.toNumber()+"\n";
   output.value += "Unsigned Zigzag Num: "+zigzag64.toNumber()+"\n";
   output.value += "Num: "+my64.toNumber()+"\n";
@@ -84,6 +97,15 @@ window.onload = function() {
   extmsg.xxu32=4294967295;
   extmsg.xxi32=-1;
   extmsg.xxsi32=-11;
+
+    extmsg.xxu64=negOne;//bigPositive;
+    extmsg.xxi64=negOne;//bigPositive;
+    extmsg.xxsi64=negOne;//bigPositive;
+
+    extmsg.nnu64=my64min;//bigPositive;
+    extmsg.nni64=my64min;//bigPositive;
+    extmsg.nnsi64=my64min;//bigPositive;
+
   extmsg.v2f = [1.25, 2.5]
   extmsg.xxd = 3.14159265358979323846264;
   extmsg.xxf = .12345678
@@ -108,7 +130,7 @@ try {
   extmsg.submes.subduration = PROTO.I64.fromNumber(1234567);
   extmsg.submessers.push().subduration = PROTO.I64.fromNumber(1);
   extmsg.submessers.push().subduration = PROTO.I64.fromNumber(2);
-  extmsg.submessers.push().subduration = PROTO.I64.fromNumber(18234563242342346752);
+  extmsg.submessers.push().subduration = PROTO.I64.fromNumber(-18234563242342346752);
   extmsg.extmesser = new ProtoJSTest.PB.ExternalMessage();
   extmsg.extmesser.is_true = 5;
   output.value += extmsg;
