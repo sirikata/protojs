@@ -693,7 +693,9 @@ PROTO.ByteArrayStream.prototype.valid = function() {
 PROTO.ByteArrayStream.prototype.getArray = function() {
     return this.array_;
 };
-
+/**
+ * @constructor
+ */
 PROTO.Uint8ArrayStream = function(arr) {
     this.array_ = arr || new Uint8Array(4096);
     this.read_pos_ = 0;
@@ -862,6 +864,9 @@ PROTO.CreateArrayStream = function(arr) {
 })();
 
 if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
+    /**
+     * @constructor
+     */
     PROTO.ArrayBufferStream = function(arr, length) {
 	this.array_buffer_ = arr || new ArrayBuffer(1024);
 	this.length_ = length || 0;
