@@ -40,14 +40,19 @@ function vectorGenerator(num,datatype,magsquared) {
     if (!magsquared) magsquared=false;
     var ret = {
         Convert:function Convert(vec) {
-            if (vec instanceof Array && vec.length==num) {
-                return vec;
-            } else if (vec instanceof Array && magsquared && vec.length==num+1) {
-                var ret = vec.slice(0, num);
+            if (vec && vec.length==num) {
+                var retv=[];
+                for (var i=0;i<num;++i)
+                    retv.push(vec[i]);
+                return retv;
+            } else if (vec && magsquared && vec.length==num+1) {
+                var retv=[];
+                for (var i=0;i<num;++i)
+                    retv.push(vec[i]);
                 if (vec[num] < 0) {
-                    ret[0] += 3.0;
+                    retv[0] += 3.0;
                 }
-                return ret;
+                return retv;
             } else {
                 console.error("Vector_in_invalid_format: "+vec+"; expect "+num+" elements.");
                 return new Array(num);
