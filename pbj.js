@@ -54,7 +54,9 @@ function vectorGenerator(num,datatype,magsquared) {
                 }
                 return retv;
             } else {
-                console.error("Vector_in_invalid_format: "+vec+"; expect "+num+" elements.");
+                if (typeof(self.console)!="undefined" && self.console.error) {                
+                    self.console.error("Vector_in_invalid_format: "+vec+"; expect "+num+" elements.");
+                }
                 return new Array(num);
             }
         },

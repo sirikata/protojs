@@ -48,6 +48,9 @@ PROTO.IsArray = (function() {
 PROTO.DefineProperty = (function () {
         var DefineProperty;
         if (typeof(Object.defineProperty) != "undefined") {
+            /**
+             * @suppress {missingProperties}
+             */
             DefineProperty = function(prototype, property, getter, setter) {
                 Object.defineProperty(prototype, property, {
                     'get': getter, 'set': setter,
@@ -67,6 +70,9 @@ PROTO.DefineProperty = (function () {
         // Make sure DefineProperty works before returning it.
         if (DefineProperty) {
             try {
+                /**
+                 * @constructor
+                 */
                 var TestClass = function(){};
                 DefineProperty(TestClass.prototype, "x",
                                function(){return this.xval*2;},
@@ -74,13 +80,11 @@ PROTO.DefineProperty = (function () {
                 var testinst = new TestClass;
                 testinst.x = 5;
                 if (testinst.x != 10) {
-                    console.log("DefineProperty test gave the wrong result "+testinst.x);
+                    PROTO.warn("DefineProperty test gave the wrong result "+testinst.x);
                     DefineProperty = undefined;
                 }
             } catch (e) {
-                if (typeof(console)!="undefined" && console.log) {
-                    console.log("DefineProperty should be supported, but threw "+e,e);
-                }
+                PROTO.warn("DefineProperty should be supported, but threw "+e);
                 DefineProperty = undefined;
             }
         }
@@ -108,15 +112,29 @@ PROTO.wiretypes = {
 PROTO.optional = 'optional';
 PROTO.repeated = 'repeated';
 PROTO.required = 'required';
+/**
+ * @param {string} s
+ */
+PROTO.warn = function (s) {
+    if (typeof(self.console)!="undefined" && self.console.log) {
+        self.console.log(s);            
+    }
+};
 
 /**
  * @constructor
  */
 PROTO.I64 = function (msw, lsw, sign) {
+    /**
+     * @type {number}
+     */
     this.msw = msw;
+    /**
+     * @type {number}
+     */
     this.lsw = lsw;
     if (typeof lsw === undefined) {
-        console.error("Too few arguments passed to I64 constructor: perhaps you meant PROTO.I64.fromNumber()");
+        PROTO.warn("Too few arguments passed to I64 constructor: perhaps you meant PROTO.I64.fromNumber()");
         throw ("Too few arguments passed to I64 constructor: perhaps you meant PROTO.I64.fromNumber()");
     }
     if (sign === true) sign = -1;
@@ -279,25 +297,35 @@ PROTO.I64.prototype = {
         }
         return new PROTO.I64(local_msw,local_lsw,this.sign);        
     },
+    /**
+     * @param {PROTO.I64} other
+     */
     less:function(other){
         if (other.sign!=this.sign) {
             return this.sign<0;
         }
-        var a=this,b=other;
+        /**
+         * @type {PROTO.I64}
+         */
+        var a=this;
+        /**
+         * @type {PROTO.I64}
+         */
+        var b=other;
         if (this.sign<0) {
             b=this;a=other;
         }
-        if (a.msb==b.msb)
-            return a.lsb<b.lsb;
-        if (a.msb<b.msb)
+        if (a.msw==b.msw)
+            return a.lsw<b.lsw;
+        if (a.msw<b.msw)
             return true;
         return false;
     },
     unsigned_less:function(other){
         var a=this,b=other;
-        if (a.msb==b.msb)
-            return a.lsb<b.lsb;
-        if (a.msb<b.msb)
+        if (a.msw==b.msw)
+            return a.lsw<b.lsw;
+        if (a.msw<b.msw)
             return true;
         return false;
     },
@@ -321,6 +349,10 @@ PROTO.I64.fromNumber = function(mynum) {
 PROTO.I64.from32pair = function(msw, lsw, sign) {
     return new PROTO.I64(msw, lsw, sign);
 };
+/**
+ * @param {PROTO.Stream} stream
+ * @param {PROTO.I64=} float64toassignto
+ */
 PROTO.I64.parseLEVar128 = function (stream, float64toassignto) {
     var retval = float64toassignto||new PROTO.I64(0,0,1);
     var n = 0;
@@ -336,7 +368,7 @@ PROTO.I64.parseLEVar128 = function (stream, float64toassignto) {
         n += offset*byt;
         offset *= 128;
     }
-    var lsw=n%4294967296
+    var lsw=n%4294967296;
     var msw = Math.floor((n - lsw) / 4294967296);   
     offset=8;
     for (var i = 0; !endloop && i < 5; i++) {
@@ -354,7 +386,10 @@ PROTO.I64.parseLEVar128 = function (stream, float64toassignto) {
     retval.sign=1;
     return retval;
 };
-
+/**
+ * @param {PROTO.Stream} stream
+ * @param {PROTO.I64=} float64toassignto
+ */
 PROTO.I64.parseLEBase256 = function (stream, float64toassignto) {
     var retval = float64toassignto||new PROTO.I64(0,0,1);
     var n = 0;
@@ -561,7 +596,7 @@ PROTO.encodeUTF8 = function(str) {
                     i++;
                 } else {
                     // error.
-                    console.log("Error decoding surrogate pair: "+c+"; "+nextc);
+                    PROTO.warn("Error decoding surrogate pair: "+c+"; "+nextc);
                 }
             }
             x = c&0xff;
@@ -582,7 +617,7 @@ PROTO.encodeUTF8 = function(str) {
                 u8.push(0x80 | (x&63));
             } else {
                 // error.
-                console.log("Error encoding to utf8: "+c+" is greater than U+10ffff");
+                PROTO.warn("Error encoding to utf8: "+c+" is greater than U+10ffff");
                 u8.push("?".charCodeAt(0));
             }
         }
@@ -607,7 +642,7 @@ PROTO.decodeUTF8 = function(u8) {
                 i+=3;
             } else {
                 // error.
-                console.log("Error decoding from utf8: "+c+","+b2+","+b3+","+b4);
+                PROTO.warn("Error decoding from utf8: "+c+","+b2+","+b3+","+b4);
                 continue;
             }
         } else if ((c&0xf0)==0xe0) {
@@ -619,7 +654,7 @@ PROTO.decodeUTF8 = function(u8) {
                 i+=2;
             } else {
                 // error.
-                console.log("Error decoding from utf8: "+c+","+b2+","+b3);
+                PROTO.warn("Error decoding from utf8: "+c+","+b2+","+b3);
                 continue;
             }
         } else if ((c&0xe0)==0xc0) {
@@ -630,14 +665,14 @@ PROTO.decodeUTF8 = function(u8) {
                 i+=1;
             } else {
                 // error.
-                console.log("Error decoding from utf8: "+c+","+b2);
+                PROTO.warn("Error decoding from utf8: "+c+","+b2);
                 continue;
             }
         } else {
             // error.
             // 80-BF: Second, third, or fourth byte of a multi-byte sequence
             // F5-FF: Start of 4, 5, or 6 byte sequence
-            console.log("Error decoding from utf8: "+c+" encountered not in multi-byte sequence");
+            PROTO.warn("Error decoding from utf8: "+c+" encountered not in multi-byte sequence");
             continue;
         }
         if (c <= 0xffff) {
@@ -647,7 +682,7 @@ PROTO.decodeUTF8 = function(u8) {
             c -= 0x10000;
             str += (String.fromCharCode(0xD800 | (c>>10)) + String.fromCharCode(0xDC00 | (c&1023)));
         } else {
-            console.log("Error encoding surrogate pair: "+c+" is greater than U+10ffff");
+            PROTO.warn("Error encoding surrogate pair: "+c+" is greater than U+10ffff");
         }
     }
     return str;
@@ -690,6 +725,7 @@ PROTO.Stream.prototype = {
 };
 /**
  * @constructor
+ * @extends {PROTO.Stream}
  * @param {Array=} arr  Existing byte array to read from, or append to.
  */
 PROTO.ByteArrayStream = function(arr) {
@@ -748,7 +784,7 @@ PROTO.Uint8ArrayStream.prototype.read = function(amt) {
 };
 PROTO.Uint8ArrayStream.prototype.write = function(arr) {
     if (this.write_pos_ + arr.length > this.array_.length) {
-	this.realloc_(this.write_pos_ + arr.length);
+	this._realloc(this.write_pos_ + arr.length);
     }
     this.array_.set(arr, this.write_pos_);
     this.write_pos_ += arr.length;
@@ -758,7 +794,7 @@ PROTO.Uint8ArrayStream.prototype.readByte = function() {
 };
 PROTO.Uint8ArrayStream.prototype.writeByte = function(byt) {
     if (this.write_pos_ >= this.array_.length) {
-	this.realloc_(this.write_pos_ + 1);
+	this._realloc(this.write_pos_ + 1);
     }
     this.array_[this.write_pos_++] = byt;
 };
@@ -777,10 +813,6 @@ PROTO.CreateArrayStream = function(arr) {
   }
 };
 
-/**
- * @constructor
- * @param {string=} b64string  String to read from, or append to.
- */
 (function(){
     var FromB64AlphaMinus43=[
         62,-1,62,-1,63,52,53,54,55,56,57,58,59,60,61,
@@ -802,6 +834,11 @@ PROTO.CreateArrayStream = function(arr) {
         'a','b','c','d','e','f','g','h','i','j','k','l','m',
         'n','o','p','q','r','s','t','u','v','w','x','y','z',
         '0','1','2','3','4','5','6','7','8','9','-','_'];
+     /**
+      * @constructor
+      * @extends {PROTO.Stream}
+      * @param {string=} b64string  String to read from, or append to.
+      */
     PROTO.Base64Stream = function(b64string) {
         this.alphabet = ToB64Alpha;
         this.string_ = b64string || '';
@@ -899,6 +936,9 @@ PROTO.CreateArrayStream = function(arr) {
 if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
     /**
      * @constructor
+     * @extends {PROTO.Stream}
+     * @param {Array|ArrayBuffer|TypedArray} arr
+     * @param {number=} length
      */
     PROTO.ArrayBufferStream = function(arr, length) {
 	this.array_buffer_ = arr || new ArrayBuffer(1024);
@@ -974,11 +1014,14 @@ if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
 	    testBlob = new self.Blob([new ArrayBuffer(1)]);
 	    useBlobCons = true;
 	} catch (e) {
-	    BlobBuilder = self.BlobBuilder || self.WebKitBlobBuilder ||
-		self.MozBlobBuilder || self.MSBlobBuilder;
+        /**
+         * @suppress {missingProperties} self
+         */
+	    BlobBuilder = self.BlobBuilder || 
+            self["WebKitBlobBuilder"] || self["MozBlobBuilder"] || self["MSBlobBuilder"];
         try {
 	        testBlob = new BlobBuilder().getBlob();
-        }catch (e) {
+        }catch (f) {
             //in a worker in FF or blobs not supported
         }
 	}
@@ -996,7 +1039,7 @@ if (typeof(ArrayBuffer) !== "undefined" && typeof(Uint8Array) !== "undefined") {
 		} else {
 		    var blobBuilder = new BlobBuilder();
 		    blobBuilder.append(this.array_buffer_);
-		    var fullBlob = blobBuilder.getBlob();
+		    fullBlob = blobBuilder.getBlob();
 		}
 		return fullBlob[slice](0, this.length_);
 	    };
@@ -1198,7 +1241,7 @@ PROTO.bytes = {
         for (var i = 0; !endloop && i < 5; i++) {
             var byt = stream.readByte();
             if (byt === undefined) {
-                console.log("read undefined byte from stream: n is "+n);
+                PROTO.warn("read undefined byte from stream: n is "+n);
                 break;
             }
             if (byt < 128) {
@@ -1211,7 +1254,7 @@ PROTO.bytes = {
     };
     var temp64num = new PROTO.I64(0,0,1);
     function parseInt32(stream) {
-        var n = parseUInt64(stream,temp64num);//snag the first 4 bytes
+        var n = PROTO.I64.parseLEVar128(stream,temp64num);
         var lsw=n.lsw;
         if (lsw > 2147483647) {
             lsw -= 2147483647;
@@ -1320,7 +1363,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
     var incompleteTuples = {};
     while (stream.valid()) {
         nextfid = PROTO.int32.ParseFromStream(stream);
-//        console.log(""+stream.read_pos_+" ; "+stream.array_.length);
+//        PROTO.warn(""+stream.read_pos_+" ; "+stream.array_.length);
         nexttype = nextfid % 8;
         nextfid >>>= 3;
         nextpropname = fidToProp[nextfid];
@@ -1329,7 +1372,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
         nextval = undefined;
         switch (nexttype) {
         case PROTO.wiretypes.varint:
-//        console.log("read varint field is "+nextfid);
+//        PROTO.warn("read varint field is "+nextfid);
             if (nextprop && nextproptype.wiretype == PROTO.wiretypes.varint) {
                 nextval = nextproptype.ParseFromStream(stream);
             } else {
@@ -1337,7 +1380,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
             }
             break;
         case PROTO.wiretypes.fixed64:
-//        console.log("read fixed64 field is "+nextfid);
+//        PROTO.warn("read fixed64 field is "+nextfid);
             if (nextprop && nextproptype.wiretype == PROTO.wiretypes.fixed64) {
                 nextval = nextproptype.ParseFromStream(stream);
             } else {
@@ -1345,7 +1388,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
             }
             break;
         case PROTO.wiretypes.lengthdelim:
-//        console.log("read lengthdelim field is "+nextfid);
+//        PROTO.warn("read lengthdelim field is "+nextfid);
             if (nextprop) {
                 if (nextproptype.wiretype != PROTO.wiretypes.lengthdelim)
                 {
@@ -1388,7 +1431,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
             }
             break;
         case PROTO.wiretypes.fixed32:
-//        console.log("read fixed32 field is "+nextfid);
+//        PROTO.warn("read fixed32 field is "+nextfid);
             if (nextprop && nextproptype.wiretype == PROTO.wiretypes.fixed32) {
                 nextval = nextproptype.ParseFromStream(stream);
             } else {
@@ -1396,7 +1439,7 @@ PROTO.mergeProperties = function(properties, stream, values) {
             }
             break;
         default:
-            console.log("ERROR: Unknown type "+nexttype+" for "+nextfid);
+            PROTO.warn("ERROR: Unknown type "+nexttype+" for "+nextfid);
             break;
         }
         if (nextval !== undefined) {
@@ -1449,7 +1492,7 @@ PROTO.serializeTupleProperty = function(property, stream, value) {
     var fid = property.id;
     var wiretype = property.type().wiretype;
     var wireId = fid * 8 + wiretype;
-//    console.log("Serializing property "+fid+" as "+wiretype+" pos is "+stream.write_pos_);
+//    PROTO.warn("Serializing property "+fid+" as "+wiretype+" pos is "+stream.write_pos_);
     if (wiretype != PROTO.wiretypes.lengthdelim && property.options.packed) {
         var bytearr = new Array();
         // Don't know length beforehand.
@@ -1497,7 +1540,7 @@ PROTO.serializeProperty = function(property, stream, value) {
     }
     var wiretype = property.type().wiretype;
     var wireId = fid * 8 + wiretype;
-//    console.log("Serializing property "+fid+" as "+wiretype+" pos is "+stream.write_pos_);
+//    PROTO.warn("Serializing property "+fid+" as "+wiretype+" pos is "+stream.write_pos_);
     if (property.multiplicity == PROTO.repeated) {
         if (wiretype != PROTO.wiretypes.lengthdelim && property.options.packed) {
             var bytearr = new Array();
@@ -1670,7 +1713,7 @@ PROTO.Message = function(name, properties) {
             return ret;
         },
         GetField: function GetField(propname) {
-            //console.log(propname);
+            //PROTO.warn(propname);
             var ret = this.values_[propname];
             var type = this.properties_[propname].type();
             if (ret && type.FromProto) {
@@ -1679,7 +1722,7 @@ PROTO.Message = function(name, properties) {
             return ret;
         },
         SetField: function SetField(propname, value) {
-            //console.log(propname+"="+value);
+            //PROTO.warn(propname+"="+value);
             if (value === undefined || value === null) {
                 this.ClearField(propname);
             } else {
@@ -1840,8 +1883,8 @@ PROTO.Extend = function(parent, newproperties) {
 };
 
 //////// DEBUG
-if (typeof(console)=="undefined") console = {};
-if (typeof(console.log)=="undefined") console.log = function(message){
+if (typeof(self.console)=="undefined") self.console = {};
+if (typeof(self.console.log)=="undefined") self.console.log = function(message){
     if (document && document.body)
         document.body.appendChild(document.createTextNode(message+"..."));
 };
