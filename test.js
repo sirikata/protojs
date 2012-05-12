@@ -93,7 +93,7 @@ window.onload = function() {
   extmsg.SerializeToStream(stream);
   output.value += "ExternalMessage.is_true: Serializes to ["+arr.toString()+"]\n";
   extmsg = new ProtoJSTest.PB.TestMessage;
-  arr2 = new Array;
+  var arr2 = new Array;
   stream = new PROTO.ByteArrayStream(arr2);
   extmsg.xxu32=4294967295;
   extmsg.xxi32=-1;
@@ -107,9 +107,9 @@ window.onload = function() {
     extmsg.nni64=my64min;//bigPositive;
     extmsg.nnsi64=my64min;//bigPositive;
 
-  extmsg.v2f = [1.25, 2.5]
+  extmsg.v2f = [1.25, 2.5];
   extmsg.xxd = 3.14159265358979323846264;
-  extmsg.xxf = .12345678
+  extmsg.xxf = .12345678;
   extmsg.xxbb = [extmsg, // serializes extmsg into bytes.
       [1,2,3,4,5,6,7,8,255,254,253,252,251,250,249,248]]; // test list assign.
   extmsg.xxff.push(1); // test push

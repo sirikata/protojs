@@ -149,6 +149,9 @@ pANTLR3_STRING jsPackageDefine(pANTLR3_STRING id, pANTLR3_STRING id_package){
     do {
         whereEnd=(whereEnd!=NULL&&whereEnd[0]!='\0')?strchr(whereEnd+1,'.'):NULL;
         std::string package=std::string(where,whereEnd?whereEnd-where:id_package->len);
+        if (package.find_last_of('.')==std::string::npos) {
+            retval+="var "+package+";\n";//declare the variable
+        }
         retval+="if (typeof(";
         retval+=package;
         retval+=")==\"undefined\") {";

@@ -84,7 +84,7 @@ protocol
     @init {
         initSymbolTable(SCOPE_TOP(Symbols),NULL,0);
     }
-    : protoroot ->IDENTIFIER[$NameSpace::jsPackageDefinition->chars] protoroot
+    : protoroot -> STRING_LITERAL["\"use strict\""] ITEM_TERMINATOR[";"] WS["\n"] IDENTIFIER[$NameSpace::jsPackageDefinition->chars] protoroot
     ;
 
 protoroot
