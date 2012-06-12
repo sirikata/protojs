@@ -719,6 +719,15 @@ PROTO.Stream.prototype = {
     writeByte: function(byt) {
         this.write_pos_ += 1;
     },
+    readPosition: function() {
+        return this.read_pos_;
+    },
+    setReadPosition: function(pos) {
+        this.read_pos_=pos;
+    },
+    writePosition: function() {
+        return this.write_pos_;
+    },
     valid: function() {
         return false;
     }
