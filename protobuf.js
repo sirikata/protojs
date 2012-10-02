@@ -1606,7 +1606,9 @@ PROTO.Message = function(name, properties) {
     };
     Composite.Convert = function Convert(val) {
         if (!(val instanceof Composite)) {
-            throw "Value not instanceof "+name+": "+typeof(val)+" : "+val;
+            
+            var errmsg = "Unknown Error: Value not instanceof Composite: "+typeof(val)+" : "+val+" instanceof "+(val instanceof Composite);
+            PROTO.warn(errmsg);//this should not happen, but occasionally it does
         }
         return val;
     };
