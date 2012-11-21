@@ -1204,7 +1204,7 @@ PROTO.bytes = {
         }
         stream.write(arr);
     };
-    function parseSFixed32(stream) {
+    function parseFixed32(stream) {
         var n = 0;
         var offset=1;
         for (var i = 0; i < 4; i++) {
@@ -1213,8 +1213,8 @@ PROTO.bytes = {
         }
         return n;
     };
-    function parseFixed32(stream) {
-        var n = parseSFixed32(stream);
+    function parseSFixed32(stream) {
+        var n = parseFixed32(stream);
         if (n > 2147483647) {
             n -= 4294967296;
         }
