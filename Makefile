@@ -1,9 +1,7 @@
 INPUTDIR=protocol
 OUTPUTDIR=output
 
-UNAME = $(shell uname)
-
-ifeq ($(UNAME),Darwin)
+ifeq ($(uname),Darwin)
 FLAGS += -arch i386
 endif
 
