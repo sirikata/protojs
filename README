@@ -37,6 +37,15 @@ protocol/. You can also run the pbj file with "pbj input.proto output.proto"
 
 If you want to build a directory full of protocol files, run it with "make INPUTDIR=/path/to/protocol". You can optionally specify OUTPUTDIR if you don't want them to go to output.
 
+==== Building protojs (Ubuntu style):
+
+Download ANTLR Java runtime and C runtime libraries. A java interpreter is
+assumed
+
+    curl http://www.antlr.org/download/antlr-3.2.jar > antlr-3.2.jar
+    sudo apt-get install libantlr3c-dev
+    make
+
 ==== Using the javascript library:
 
 The javascript library is intended to be as similar as possible to python
