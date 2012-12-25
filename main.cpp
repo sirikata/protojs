@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     pANTLR3_INPUT_STREAM input=NULL;
     pProtoJSLexer lxr;
     pANTLR3_COMMON_TOKEN_STREAM tstream;
-    pProtoJSParser psr,ctx;
+    pProtoJSParser psr;
     ProtoJSParser_protocol_return     pbjAST;
     if (argc < 2 || argv[1] == NULL)
         filename = (pANTLR3_UINT8)"./input";
