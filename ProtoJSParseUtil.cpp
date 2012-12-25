@@ -1439,9 +1439,6 @@ void printEnum(pProtoJSParser ctx, int offset, pANTLR3_STRING id, pANTLR3_LIST e
     }
 }
 void defineEnum(pProtoJSParser ctx, pANTLR3_STRING id, pANTLR3_LIST enumValues) {
-    pANTLR3_STRING messageName=NULL;
-    if (SCOPE_SIZE(message))
-        messageName=(SCOPE_TOP(message))->messageName;
     int i,*maxval=(int*)malloc(sizeof(int));
     *maxval=0;
     if (SCOPE_TOP(Symbols) == NULL) return;
@@ -1459,9 +1456,6 @@ void defineEnum(pProtoJSParser ctx, pANTLR3_STRING id, pANTLR3_LIST enumValues) 
     SCOPE_TOP(Symbols)->enum_sizes->put(SCOPE_TOP(Symbols)->enum_sizes,id->chars,maxval,&free);        
 }
 void defineEnumValue(pProtoJSParser ctx, pANTLR3_STRING enumName, pANTLR3_LIST enumValues, pANTLR3_STRING id, pANTLR3_STRING value) {
-    pANTLR3_STRING messageName=NULL;
-    if (SCOPE_SIZE(message))
-        messageName=(SCOPE_TOP(message))->messageName;
     if (SCOPE_TOP(Symbols) == NULL) return;
     SCOPE_TOP(Symbols)->enum_values->put(SCOPE_TOP(Symbols)->enum_values, id->chars, value, NULL);
     enumValues->put(enumValues,enumValues->size(enumValues),id,stringFree);
@@ -1469,9 +1463,6 @@ void defineEnumValue(pProtoJSParser ctx, pANTLR3_STRING enumName, pANTLR3_LIST e
 
 }
 void defineFlag(pProtoJSParser ctx, pANTLR3_STRING id, pANTLR3_LIST flagValues, unsigned int flagBits) {
-    pANTLR3_STRING messageName=NULL;
-    if (SCOPE_SIZE(message))
-        messageName=(SCOPE_TOP(message))->messageName;
     unsigned int* bits=(unsigned int *)malloc(sizeof(unsigned int));
     *bits=flagBits;
     if (SCOPE_TOP(Symbols) == NULL) return;
@@ -1500,9 +1491,6 @@ void defineFlag(pProtoJSParser ctx, pANTLR3_STRING id, pANTLR3_LIST flagValues, 
 }
 
 void defineFlagValue(pProtoJSParser ctx, pANTLR3_STRING flagName, pANTLR3_LIST flagValues, pANTLR3_STRING id, pANTLR3_STRING value) {
-    pANTLR3_STRING messageName=NULL;
-    if (SCOPE_SIZE(message))
-        messageName=(SCOPE_TOP(message))->messageName;
     if (SCOPE_TOP(Symbols) == NULL) return;//FIXME
     SCOPE_TOP(Symbols)->flag_values->put(SCOPE_TOP(Symbols)->flag_values, id->chars, id, NULL);
     flagValues->put(flagValues,flagValues->size(flagValues),id,stringFree);
