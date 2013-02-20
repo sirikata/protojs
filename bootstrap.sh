@@ -4,14 +4,14 @@ if [ -e antlr-3.2.jar ]; then
 	true
 else
 	echo "Downloading ANTLR 3.2 JAR from http://www.antlr.org/download.html"
-	curl http://www.antlr.org/download/antlr-3.2.jar > antlr-3.2.jar || \
+	curl http://pkgs.fedoraproject.org/repo/pkgs/antlr3/antlr-3.2.jar/ee7dc3fb20cf3e9efd871e297c0d532b/antlr-3.2.jar > antlr-3.2.jar || \
 	(echo "Failed to download ANTLR. Aborting.";rm -f antlr-3.2.jar;exit 1)
 fi
 if [ -e antlr-3.2/lib/libantlr3c.a -o -e libantlr3c-3.2.tar.gz ]; then
 	true
 else
 	echo "Downloading ANTLR 3.2 C Runtime from http://www.antlr.org/download/C"
-	curl http://www.antlr.org/download/C/libantlr3c-3.2.tar.gz \
+	curl http://pkgs.fedoraproject.org/repo/pkgs/antlr3/libantlr3c-3.2.tar.gz/674646e1d1bf5c6015435480cead725a/libantlr3c-3.2.tar.gz \
 		> libantlr3c-3.2.tar.gz || \
 	(echo "Failed to download. Aborting.";rm libantlr3c-3.2.tar.gz;exit 1)
 fi
