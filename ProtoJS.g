@@ -44,7 +44,8 @@ tokens
     PROTO;
 }
 
-scope NameSpace {
+scope NameSpace
+{
     struct LanguageOutputStruct* output;
     pANTLR3_STRING filename;
     pANTLR3_STRING externalNamespace;
@@ -58,7 +59,8 @@ scope NameSpace {
     void*parent;
 }
 
-scope Symbols {
+scope Symbols
+{
     pANTLR3_STRING message;
     pANTLR3_LIST required_advanced_fields;
     pANTLR3_HASH_TABLE types;
@@ -76,145 +78,187 @@ scope Symbols {
     struct CsStreams *cs_streams;
 }
 
-@members {
+@members
+{
     #include "ProtoJSParseUtil.h"
 }
+
 protocol
     scope Symbols;
-    @init {
-        initSymbolTable(SCOPE_TOP(Symbols),NULL,0);
-    }
-    : protoroot -> STRING_LITERAL["\"use strict\""] ITEM_TERMINATOR[";"] WS["\n"] IDENTIFIER[$NameSpace::jsPackageDefinition->chars] protoroot
+    @init
+        {
+            initSymbolTable(SCOPE_TOP(Symbols),NULL,0);
+        }
+    :
+    protoroot -> STRING_LITERAL["\"use strict\""] ITEM_TERMINATOR[";"] WS["\n"] IDENTIFIER[$NameSpace::jsPackageDefinition->chars] protoroot
     ;
 
 protoroot
     scope NameSpace;
-    @init {
-        initNameSpace(ctx,SCOPE_TOP(NameSpace));
-    }
-	:	pbj_header? (importrule|message|service|enum_def|flags_def|option_assignment)* (package (importrule|message|service|enum_def|flags_def|option_assignment)*)?
-    {
-    }
+    @init
+        {
+            initNameSpace(ctx,SCOPE_TOP(NameSpace));
+        }
+    :
+    pbj_header? (syntax|importrule|message|service|enum_def|flags_def|option_assignment)* (package (syntax|importrule|message|service|enum_def|flags_def|option_assignment)*)?
 	;
-pbj_header : (STRING_LITERAL -> IDENTIFIER[$NameSpace::packageDot->chars] IDENTIFIER["_PBJ_Internal"] EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"])
-    {
+
+pbj_header:
+    STRING_LITERAL -> IDENTIFIER[$NameSpace::packageDot->chars] IDENTIFIER["_PBJ_Internal"] EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"]
+        {
             if (strncmp((char*)$STRING_LITERAL.text->chars,"\"pbj-0.0.3\"",9)==0&&$STRING_LITERAL.text->chars[9]<='9'&&$STRING_LITERAL.text->chars[9]>='3') {
                 
-            }else {
-
+            } else {
                 fprintf(stderr,"error: line \%d: pbj version \%s not understood--this compiler understands \"pbj-0.0.3\"\n",$STRING_LITERAL->line,$STRING_LITERAL.text->chars);  
-            }
+            };
             $NameSpace::isPBJ=1;
-    }
+        }
     ;
-package
-    
-    : ( PACKAGELITERAL packagename ITEM_TERMINATOR -> WS["\n"])
+
+package:
+    PACKAGELITERAL packagename ITEM_TERMINATOR -> WS["\n"]
         {
             jsPackageDefine($NameSpace::jsPackageDefinition,$packagename.text);
         }
 	;
-packagename : QUALIFIEDIDENTIFIER
-    {
-            definePackage( ctx, $QUALIFIEDIDENTIFIER.text);
-    }
-    |  IDENTIFIER
-    {
-            definePackage( ctx, $IDENTIFIER.text);
-    }
+
+packagename:
+    QUALIFIEDIDENTIFIER
+        {
+                definePackage( ctx, $QUALIFIEDIDENTIFIER.text);
+        }
+    | IDENTIFIER
+        {
+                definePackage( ctx, $IDENTIFIER.text);
+        }
     ;
-importrule
-   :   ( IMPORTLITERAL STRING_LITERAL ITEM_TERMINATOR -> COMMENT["//"] IMPORTLITERAL WS[" "] STRING_LITERAL ITEM_TERMINATOR WS["\n"] )
+
+syntax:
+    SYNTAXLITERAL
+    ;
+
+importrule:
+    IMPORTLITERAL STRING_LITERAL ITEM_TERMINATOR -> COMMENT["//"] IMPORTLITERAL WS[" "] STRING_LITERAL ITEM_TERMINATOR WS["\n"]
         {
             defineImport( ctx, $STRING_LITERAL.text );
         }
 	;
 
-service: (SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE -> )
-  {
-     fprintf(stderr,"warning: ignoring service \%s\n",$IDENTIFIER.text->chars);
-  };
-service_block : RPC IDENTIFIER PAREN_OPEN service_args? PAREN_CLOSE RETURNS PAREN_OPEN IDENTIFIER PAREN_CLOSE ITEM_TERMINATOR ;
+service:
+    SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE ->
+        {
+            fprintf(stderr,"warning: ignoring service \%s\n",$IDENTIFIER.text->chars);
+        }
+    ;
 
-service_args :IDENTIFIER (COMMA service_args)? ;
+service_block:
+    RPC IDENTIFIER PAREN_OPEN service_args? PAREN_CLOSE RETURNS PAREN_OPEN IDENTIFIER PAREN_CLOSE ITEM_TERMINATOR
+    ;
+
+service_args:
+    IDENTIFIER (COMMA service_args)?
+    ;
 
 //NOBRACE* ( BLOCK_OPEN service_block BLOCK_CLOSE NOBRACE*)? {};
 message
-    scope {
+    scope
+    {
         int isExtension;        
         pANTLR3_STRING messageName;
     }    
-    :   ( message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE 
-           -> {ctx->pProtoJSParser_SymbolsStack_limit<=1}?
-                  IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx,$message_not_extend.text,$message_identifier.text)] QUOTE["\""] COMMA[","] BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"]
-                  -> message_identifier WS[" "] COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx,$message_not_extend.text,$message_identifier.text)] QUOTE["\""] COMMA[","] BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] WS["\n"] )
+    : 
+    message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE ->
+        { ctx->pProtoJSParser_SymbolsStack_limit<= 1 }?
+        IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
+        QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""]
+        QUALIFIEDIDENTIFIER[qualifyType(ctx, $message_not_extend.text, $message_identifier.text)] QUOTE["\""] COMMA[","]
+        BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"] ->
+            message_identifier WS[" "] COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Message"]
+            PAREN_OPEN["("] QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx, $message_not_extend.text, $message_identifier.text)] QUOTE["\""] COMMA[","]
+            BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] WS["\n"]
         {
-            if(!$message::isExtension) {
-                defineType( ctx, $message::messageName ,TYPE_ISMESSAGE);
-            }
+            if ( !$message::isExtension )
+            {
+                defineType(ctx, $message::messageName, TYPE_ISMESSAGE);
+            };
             stringFree($message::messageName);
         }
 
-        |   ( extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE 
-           -> IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Extend"] PAREN_OPEN["("] QUALIFIEDIDENTIFIER[qualifyType(ctx,$extend_not_message.text,$message_identifier.text)] COMMA[","] BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"] )
+    | extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE ->
+        IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
+        QUALIFIEDIDENTIFIER["PROTO.Extend"] PAREN_OPEN["("]
+        QUALIFIEDIDENTIFIER[qualifyType(ctx, $extend_not_message.text, $message_identifier.text)] COMMA[","] BLOCK_OPEN WS["\n"]
+        at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"]
         {
-            if(!$message::isExtension) {
-                defineType( ctx, $message::messageName ,TYPE_ISMESSAGE);
-            }
+            if ( !$message::isExtension )
+            {
+                defineType(ctx, $message::messageName, TYPE_ISMESSAGE);
+            };
             stringFree($message::messageName);
         }
 	;
 
-message_not_extend : 
-        MESSAGE {$message::isExtension=0;}
-        ;
-
-extend_not_message : 
-        EXTEND {$message::isExtension=1;}
-        ;
-
-message_identifier
-    : IDENTIFIER
-    {
-        $message::messageName=stringDup($IDENTIFIER.text);
-        if ($message::isExtension) {
-            defineExtension(ctx, $message::messageName);
-        }else {
-            defineMessage(ctx, $message::messageName);
+message_not_extend: 
+    MESSAGE
+        {
+            $message::isExtension = 0;
         }
-    }
+    ;
+
+extend_not_message: 
+    EXTEND
+        {
+            $message::isExtension = 1;
+        }
+    ;
+
+message_identifier:
+    IDENTIFIER
+        {
+            $message::messageName = stringDup($IDENTIFIER.text);
+            if ( $message::isExtension )
+            {
+                defineExtension(ctx, $message::messageName);
+            } else {
+                defineMessage(ctx, $message::messageName);
+            };
+        }
     ;
 
 at_least_one_message_element
     scope Symbols;
     @init
-    {
-        initSymbolTable(SCOPE_TOP(Symbols), $message::messageName, $message::isExtension);  
-    }
-	:	(extensions|reservations)* message_element zero_or_more_message_elements
-    {
-        if($message::isExtension) {
-            defineExtensionEnd(ctx, $message::messageName);
-        }else {
-            defineMessageEnd(ctx, $message::messageName);
+        {
+            initSymbolTable(SCOPE_TOP(Symbols), $message::messageName, $message::isExtension);  
         }
-    }
+	:
+    (extensions|reservations)* message_element zero_or_more_message_elements
+        {
+            if ( $message::isExtension )
+            {
+                defineExtensionEnd(ctx, $message::messageName);
+            } else {
+                defineMessageEnd(ctx, $message::messageName);
+            };
+        }
     ;
-zero_or_more_message_elements : (newline_message_element|extensions|reservations|option_assignment)*;
 
-
-newline_message_element
-	:	(field -> COMMA[","] WS["\n"] field)
-	|	(message -> COMMA[","] WS["\n"] message)
-	|	(enum_def -> COMMA[","] WS["\n"] enum_def)
-	|	(flags_def -> COMMA[","] WS["\n"] flags_def)
+zero_or_more_message_elements:
+    (newline_message_element|extensions|reservations|option_assignment)*
     ;
 
-message_element
-	:	field
-	|	message
-	|	enum_def
-	|	flags_def
+newline_message_element:
+    field -> COMMA[","] WS["\n"] field
+	| message -> COMMA[","] WS["\n"] message
+	| enum_def -> COMMA[","] WS["\n"] enum_def
+	| flags_def -> COMMA[","] WS["\n"] flags_def
+    ;
+
+message_element:
+    field
+	| message
+	| enum_def
+	| flags_def
 	;
 
 extensions
@@ -541,6 +585,7 @@ literal_value
 
 PACKAGELITERAL :    'package';
 IMPORTLITERAL :     'import';
+SYNTAXLITERAL :     'syntax';
 
 DOT :  '.';
 // Message elements
