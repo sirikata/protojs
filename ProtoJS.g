@@ -87,7 +87,7 @@ protocol
     scope Symbols;
     @init
         {
-            initSymbolTable(SCOPE_TOP(Symbols),NULL,0);
+            initSymbolTable(SCOPE_TOP(Symbols), NULL, 0);
         }
     :
     protoroot -> STRING_LITERAL["\"use strict\""] ITEM_TERMINATOR[";"] WS["\n"] IDENTIFIER[$NameSpace::jsPackageDefinition->chars] protoroot
@@ -97,14 +97,15 @@ protoroot
     scope NameSpace;
     @init
         {
-            initNameSpace(ctx,SCOPE_TOP(NameSpace));
+            initNameSpace(ctx, SCOPE_TOP(NameSpace));
         }
     :
     pbj_header? (syntax|importrule|message|service|enum_def|flags_def|option_assignment)* (package (syntax|importrule|message|service|enum_def|flags_def|option_assignment)*)?
 	;
 
 pbj_header:
-    STRING_LITERAL -> IDENTIFIER[$NameSpace::packageDot->chars] IDENTIFIER["_PBJ_Internal"] EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"]
+    STRING_LITERAL
+        -> IDENTIFIER[$NameSpace::packageDot->chars] IDENTIFIER["_PBJ_Internal"] EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"]
         {
             if (strncmp((char*)$STRING_LITERAL.text->chars,"\"pbj-0.0.3\"",9)==0&&$STRING_LITERAL.text->chars[9]<='9'&&$STRING_LITERAL.text->chars[9]>='3') {
                 
@@ -118,36 +119,41 @@ pbj_header:
 package:
     PACKAGELITERAL packagename ITEM_TERMINATOR -> WS["\n"]
         {
-            jsPackageDefine($NameSpace::jsPackageDefinition,$packagename.text);
+            jsPackageDefine($NameSpace::jsPackageDefinition, $packagename.text);
         }
 	;
 
 packagename:
     QUALIFIEDIDENTIFIER
         {
-                definePackage( ctx, $QUALIFIEDIDENTIFIER.text);
+                definePackage(ctx, $QUALIFIEDIDENTIFIER.text);
         }
     | IDENTIFIER
         {
-                definePackage( ctx, $IDENTIFIER.text);
+                definePackage(ctx, $IDENTIFIER.text);
         }
     ;
 
 syntax:
-    SYNTAXLITERAL
+    SYNTAXLITERAL EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"]
+        ->
+        {
+            fprintf(stderr, "warning: ignoring syntax \%s\n", $STRING_LITERAL.text->chars);
+        }
     ;
 
 importrule:
     IMPORTLITERAL STRING_LITERAL ITEM_TERMINATOR -> COMMENT["//"] IMPORTLITERAL WS[" "] STRING_LITERAL ITEM_TERMINATOR WS["\n"]
         {
-            defineImport( ctx, $STRING_LITERAL.text );
+            defineImport(ctx, $STRING_LITERAL.text);
         }
 	;
 
 service:
-    SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE ->
+    SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE
+        ->
         {
-            fprintf(stderr,"warning: ignoring service \%s\n",$IDENTIFIER.text->chars);
+            fprintf(stderr,"warning: ignoring service \%s\n", $IDENTIFIER.text->chars);
         }
     ;
 
@@ -167,13 +173,13 @@ message
         pANTLR3_STRING messageName;
     }    
     : 
-    message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE ->
-        { ctx->pProtoJSParser_SymbolsStack_limit<= 1 }?
-        IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
-        QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""]
-        QUALIFIEDIDENTIFIER[qualifyType(ctx, $message_not_extend.text, $message_identifier.text)] QUOTE["\""] COMMA[","]
-        BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"] ->
-            message_identifier WS[" "] COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Message"]
+    message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+        ->  { ctx->pProtoJSParser_SymbolsStack_limit <= 1 }?
+            IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
+            QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""]
+            QUALIFIEDIDENTIFIER[qualifyType(ctx, $message_not_extend.text, $message_identifier.text)] QUOTE["\""] COMMA[","]
+            BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"] 
+        ->  message_identifier WS[" "] COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Message"]
             PAREN_OPEN["("] QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx, $message_not_extend.text, $message_identifier.text)] QUOTE["\""] COMMA[","]
             BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] WS["\n"]
         {
@@ -184,11 +190,11 @@ message
             stringFree($message::messageName);
         }
 
-    | extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE ->
-        IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
-        QUALIFIEDIDENTIFIER["PROTO.Extend"] PAREN_OPEN["("]
-        QUALIFIEDIDENTIFIER[qualifyType(ctx, $extend_not_message.text, $message_identifier.text)] COMMA[","] BLOCK_OPEN WS["\n"]
-        at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"]
+    | extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+        ->  IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
+            QUALIFIEDIDENTIFIER["PROTO.Extend"] PAREN_OPEN["("]
+            QUALIFIEDIDENTIFIER[qualifyType(ctx, $extend_not_message.text, $message_identifier.text)] COMMA[","] BLOCK_OPEN WS["\n"]
+            at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"]
         {
             if ( !$message::isExtension )
             {
@@ -462,21 +468,24 @@ multiplicitive_type
 array_spec
 	:	SQBRACKET_OPEN integer? SQBRACKET_CLOSE
 	;
-option_assignment
-    :
+
+option_assignment:
     (OPTION_LITERAL PAREN_OPEN? IDENTIFIER PAREN_CLOSE? EQUALS option_assignment_value ITEM_TERMINATOR -> )
-    {
-            if (strcmp($IDENTIFIER.text->chars,"java_package")!=0&&
-                strcmp($IDENTIFIER.text->chars,"java_outer_classname")!=0&&
-                strcmp($IDENTIFIER.text->chars,"java_multiple_files")!=0&&
-                strcmp($IDENTIFIER.text->chars,"optimize_for")!=0) {
-                fprintf(stderr,"Warning: Unrecognized option \%s\n",$IDENTIFIER.text->chars);
+        {
+            if ( strcmp($IDENTIFIER.text->chars, "java_package") != 0 &&
+                strcmp($IDENTIFIER.text->chars, "java_outer_classname") != 0 &&
+                strcmp($IDENTIFIER.text->chars, "java_multiple_files") !=0 &&
+                strcmp($IDENTIFIER.text->chars, "optimize_for") != 0) {
+                fprintf(stderr,"Warning: Unrecognized option \%s\n", $IDENTIFIER.text->chars);
             }
-                
-    }
+        }
     ;
 
-option_assignment_value: (literal_value|QUALIFIEDIDENTIFIER|IDENTIFIER) {};
+option_assignment_value:
+    (literal_value|QUALIFIEDIDENTIFIER|IDENTIFIER)
+        {}
+    ;
+
 default_value
 	:	
     (SQBRACKET_OPEN option_pairs SQBRACKET_CLOSE -> 
@@ -505,21 +514,23 @@ option_pair
   }
   ;
 
-option_literal_value : literal_value {
-        $option_pair::literalValue=defaultValuePreprocess(ctx, NULL, $literal_value.text);
-   }
-   ;
+option_literal_value:
+    literal_value
+        {
+            $option_pair::literalValue = defaultValuePreprocess(ctx, NULL, $literal_value.text);
+        }
+    ;
 
-default_literal_value : literal_value
-  {
-        $field::defaultValue=defaultValuePreprocess(ctx, $field::fieldType, $literal_value.text);
-  }
-    |
-  IDENTIFIER
-  {
-        $field::defaultValue=defaultValueIdentifierPreprocess(ctx, $field::fieldType, $IDENTIFIER.text);
-  }
-  ;
+default_literal_value:
+    literal_value
+        {
+            $field::defaultValue = defaultValuePreprocess(ctx, $field::fieldType, $literal_value.text);
+        }
+    | IDENTIFIER
+        {
+            $field::defaultValue = defaultValueIdentifierPreprocess(ctx, $field::fieldType, $IDENTIFIER.text);
+        }
+    ;
 
 floating_point_type : FLOAT;
 double_floating_point_type:	DOUBLE;
