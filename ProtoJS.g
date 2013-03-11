@@ -104,8 +104,8 @@ protoroot
 	;
 
 pbj_header:
-    STRING_LITERAL
-        -> IDENTIFIER[$NameSpace::packageDot->chars] IDENTIFIER["_PBJ_Internal"] EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"]
+    (STRING_LITERAL
+        -> IDENTIFIER[$NameSpace::packageDot->chars] IDENTIFIER["_PBJ_Internal"] EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"])
         {
             if (strncmp((char*)$STRING_LITERAL.text->chars,"\"pbj-0.0.3\"",9)==0&&$STRING_LITERAL.text->chars[9]<='9'&&$STRING_LITERAL.text->chars[9]>='3') {
                 
@@ -117,7 +117,7 @@ pbj_header:
     ;
 
 package:
-    PACKAGELITERAL packagename ITEM_TERMINATOR -> WS["\n"]
+    (PACKAGELITERAL packagename ITEM_TERMINATOR -> WS["\n"])
         {
             jsPackageDefine($NameSpace::jsPackageDefinition, $packagename.text);
         }
@@ -135,23 +135,21 @@ packagename:
     ;
 
 syntax:
-    SYNTAXLITERAL EQUALS["="] STRING_LITERAL ITEM_TERMINATOR[";"] WS["\n"]
-        ->
+    (SYNTAXLITERAL EQUALS STRING_LITERAL ITEM_TERMINATOR WS ->)
         {
             fprintf(stderr, "warning: ignoring syntax \%s\n", $STRING_LITERAL.text->chars);
         }
     ;
 
 importrule:
-    IMPORTLITERAL STRING_LITERAL ITEM_TERMINATOR -> COMMENT["//"] IMPORTLITERAL WS[" "] STRING_LITERAL ITEM_TERMINATOR WS["\n"]
+    (IMPORTLITERAL STRING_LITERAL ITEM_TERMINATOR -> COMMENT["//"] IMPORTLITERAL WS[" "] STRING_LITERAL ITEM_TERMINATOR WS["\n"])
         {
             defineImport(ctx, $STRING_LITERAL.text);
         }
 	;
 
 service:
-    SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE
-        ->
+    (SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE ->)
         {
             fprintf(stderr,"warning: ignoring service \%s\n", $IDENTIFIER.text->chars);
         }
@@ -173,7 +171,7 @@ message
         pANTLR3_STRING messageName;
     }    
     : 
-    message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+    (message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
         ->  { ctx->pProtoJSParser_SymbolsStack_limit <= 1 }?
             IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
             QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""]
@@ -181,7 +179,7 @@ message
             BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"] 
         ->  message_identifier WS[" "] COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Message"]
             PAREN_OPEN["("] QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx, $message_not_extend.text, $message_identifier.text)] QUOTE["\""] COMMA[","]
-            BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] WS["\n"]
+            BLOCK_OPEN WS["\n"] at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] WS["\n"])
         {
             if ( !$message::isExtension )
             {
@@ -190,11 +188,11 @@ message
             stringFree($message::messageName);
         }
 
-    | extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+    | (extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
         ->  IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
             QUALIFIEDIDENTIFIER["PROTO.Extend"] PAREN_OPEN["("]
             QUALIFIEDIDENTIFIER[qualifyType(ctx, $extend_not_message.text, $message_identifier.text)] COMMA[","] BLOCK_OPEN WS["\n"]
-            at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"]
+            at_least_one_message_element BLOCK_CLOSE PAREN_CLOSE[")"] ITEM_TERMINATOR[";"] WS["\n"])
         {
             if ( !$message::isExtension )
             {
@@ -254,10 +252,10 @@ zero_or_more_message_elements:
     ;
 
 newline_message_element:
-    field -> COMMA[","] WS["\n"] field
-	| message -> COMMA[","] WS["\n"] message
-	| enum_def -> COMMA[","] WS["\n"] enum_def
-	| flags_def -> COMMA[","] WS["\n"] flags_def
+    (field -> COMMA[","] WS["\n"] field)
+	| (message -> COMMA[","] WS["\n"] message)
+	| (enum_def -> COMMA[","] WS["\n"] enum_def)
+	| (flags_def -> COMMA[","] WS["\n"] flags_def)
     ;
 
 message_element:
