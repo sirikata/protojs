@@ -256,6 +256,7 @@ newline_message_element:
 	| (message -> COMMA[","] WS["\n"] message)
 	| (enum_def -> COMMA[","] WS["\n"] enum_def)
 	| (flags_def -> COMMA[","] WS["\n"] flags_def)
+    | (group -> )
     ;
 
 message_element:
@@ -263,6 +264,7 @@ message_element:
 	| message
 	| enum_def
 	| flags_def
+    | (group -> )
 	;
 
 extensions
@@ -383,6 +385,21 @@ field
     }
 	;
 
+group:
+    multiplicity GROUP group_name EQUALS group_offset BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+    {
+        fprintf(stderr, "Warning: group is deprecated\n");
+    }
+    ;
+
+group_name:
+    IDENTIFIER
+    ;
+
+group_offset:
+    integer
+    ;
+
 multiplicity : (ProtoJSOPTIONAL){}
     |(REQUIRED) 
     { $field::isRequired=1;} 
@@ -392,8 +409,8 @@ multiplicity : (ProtoJSOPTIONAL){}
     }
 	;
 
-
 none : (DOT?)->IDENTIFIER[($field::isNumericType||isPackable(ctx,$field::fieldType))&&$field::isRepeated&&$NameSpace::isPBJ?"{packed:true}":"{}"] ;
+
 field_offset
     : integer
     {
@@ -453,6 +470,7 @@ field_type
 type_identifier
     : IDENTIFIER | QUALIFIEDIDENTIFIER
     ;
+
 multiplicitive_type
     : 
     (multiplicitive_advanced_type -> QUALIFIEDIDENTIFIER["PBJ."] multiplicitive_advanced_type)
@@ -608,6 +626,7 @@ RESERVE : 'reserve';
 TO : 'to';
 // Enum elements
 ENUM	:	'enum';
+GROUP   :   'group';
 
 flags : 
      FLAGS8
