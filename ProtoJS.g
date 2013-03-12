@@ -135,9 +135,9 @@ packagename:
     ;
 
 syntax:
-    (SYNTAXLITERAL EQUALS STRING_LITERAL ITEM_TERMINATOR WS ->)
+    (SYNTAXLITERAL EQUALS STRING_LITERAL ITEM_TERMINATOR -> )
         {
-            fprintf(stderr, "warning: ignoring syntax \%s\n", $STRING_LITERAL.text->chars);
+            fprintf(stderr, "Warning: ignoring syntax \%s\n", $STRING_LITERAL.text->chars);
         }
     ;
 
@@ -151,7 +151,7 @@ importrule:
 service:
     (SERVICE IDENTIFIER BLOCK_OPEN service_block* BLOCK_CLOSE ->)
         {
-            fprintf(stderr,"warning: ignoring service \%s\n", $IDENTIFIER.text->chars);
+            fprintf(stderr,"Warning: ignoring service \%s\n", $IDENTIFIER.text->chars);
         }
     ;
 
