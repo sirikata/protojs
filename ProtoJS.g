@@ -171,7 +171,7 @@ message
         pANTLR3_STRING messageName;
     }    
     : 
-    (message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+    (message_not_extend message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE ITEM_TERMINATOR?
         ->  { ctx->pProtoJSParser_SymbolsStack_limit <= 1 }?
             IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
             QUALIFIEDIDENTIFIER["PROTO.Message"] PAREN_OPEN["("] QUOTE["\""]
@@ -188,7 +188,7 @@ message
             stringFree($message::messageName);
         }
 
-    | (extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+    | (extend_not_message message_identifier BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE ITEM_TERMINATOR?
         ->  IDENTIFIER[$NameSpace::packageDot->chars] message_identifier WS[" "] EQUALS["="] WS[" "]
             QUALIFIEDIDENTIFIER["PROTO.Extend"] PAREN_OPEN["("]
             QUALIFIEDIDENTIFIER[qualifyType(ctx, $extend_not_message.text, $message_identifier.text)] COMMA[","] BLOCK_OPEN WS["\n"]
