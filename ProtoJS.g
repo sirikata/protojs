@@ -256,7 +256,7 @@ newline_message_element:
 	| (message -> COMMA[","] WS["\n"] message)
 	| (enum_def -> COMMA[","] WS["\n"] enum_def)
 	| (flags_def -> COMMA[","] WS["\n"] flags_def)
-    | (group -> )
+    | (group -> COMMA[","] WS["\n"] group)
     ;
 
 message_element:
@@ -264,7 +264,7 @@ message_element:
 	| message
 	| enum_def
 	| flags_def
-    | (group -> )
+    | group
 	;
 
 extensions
@@ -385,11 +385,20 @@ field
     }
 	;
 
-group:
-    multiplicity GROUP group_name EQUALS group_offset BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+group
+    @after
     {
-        fprintf(stderr, "Warning: group is deprecated\n");
-    }
+    	printf("AST: \%s\n", (char *)$group.tree->toStringTree($group.tree)->chars);
+    }:
+    (multiplicity GROUP group_name EQUALS group_offset BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
+    -> WS["\t"] IDENTIFIER["_"] group_name COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Group"] PAREN_OPEN["("] 
+    	QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx, $group_name.text, $group_name.text)] QUOTE["\""]
+    	COMMA[","] at_least_one_message_element
+    	PAREN_CLOSE[")"] )
+    	{
+    		defineType(ctx, $group_name.text, TYPE_ISGROUP);
+        	fprintf(stderr, "Warning: group is deprecated\n");
+    	}
     ;
 
 group_name:

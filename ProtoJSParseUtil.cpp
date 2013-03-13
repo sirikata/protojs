@@ -38,12 +38,16 @@
 #include <iostream>
 #include <string.h>
 
-int gMessageTypeInt=0;
-int gFlagTypeInt=1;
-int gEnumTypeInt=2;
-void * gMessageType=&gMessageTypeInt;
-void * gFlagType=&gFlagTypeInt;
-void * gEnumType=&gEnumTypeInt;
+// WHY? :)
+int gMessageTypeInt = 0;
+int gFlagTypeInt = 1;
+int gEnumTypeInt = 2;
+int gGroupTypeInt = 3;
+void *gMessageType = &gMessageTypeInt;
+void *gFlagType = &gFlagTypeInt;
+void *gEnumType = &gEnumTypeInt;
+void *gGroupType = &gGroupTypeInt;
+
 
 void  freeSymbolTable(SCOPE_TYPE(Symbols) symtab) {
     symtab->types->free(symtab->types);
@@ -168,34 +172,35 @@ pANTLR3_STRING jsPackageDefine(pANTLR3_STRING id, pANTLR3_STRING id_package){
 
 std::string currentNamespace(pProtoJSParser ctx) {
     std::string retval((const char*)SCOPE_TOP(NameSpace)->packageDot->chars);
-    for (int i = 0; i < (int)SCOPE_SIZE(Symbols)-1 ; ++i) {
-        retval+=(const char*)((SCOPE_TYPE(Symbols))SCOPE_INSTANCE(Symbols,i))->message->chars;
-        retval+='.';
+    for (int i = 0; i < (int)SCOPE_SIZE(Symbols) - 1 ; ++i) {
+        retval += (const char *)((SCOPE_TYPE(Symbols)) SCOPE_INSTANCE(Symbols, i))->message->chars;
+        retval += '.';
     }
     return retval;
 }
 std::string findSymbol(pProtoJSParser ctx, std::string nameSpace, std::string identifier) {
     do {
-        std::string retval = nameSpace+identifier;
-        if (SCOPE_TOP(NameSpace)->qualifiedTypes->get(SCOPE_TOP(NameSpace)->qualifiedTypes,(void*)retval.c_str())!=NULL) {
+        std::string retval = nameSpace + identifier;
+        if (SCOPE_TOP(NameSpace)->qualifiedTypes->get(SCOPE_TOP(NameSpace)->qualifiedTypes, (void*)retval.c_str()) != NULL)
+        {
             return retval;
-        }
-        if(nameSpace.length()&&nameSpace[nameSpace.length()-1]=='.') {
-            nameSpace=nameSpace.substr(0,nameSpace.length()-1);
-        }
-        std::string::size_type where=nameSpace.find_last_of('.');
-        if (where!=std::string::npos) {
-            nameSpace=nameSpace.substr(0,where+1);
-        }else {
+        };
+        if(nameSpace.length() && nameSpace[nameSpace.length() - 1] == '.') {
+            nameSpace = nameSpace.substr(0, nameSpace.length() - 1);
+        };
+        std::string::size_type where = nameSpace.find_last_of('.');
+        if (where != std::string::npos) {
+            nameSpace = nameSpace.substr(0, where + 1);
+        } else {
             break;
-        }
-    }while (true);
+        };
+    } while (true);
     return identifier;
 }
 const char* qualifyType(pProtoJSParser ctx, pANTLR3_STRING retvalStorage, pANTLR3_STRING identifier){
-    std::string retval=currentNamespace(ctx);
-    retval=findSymbol(ctx,retval,(const char*)identifier->chars);
-    retvalStorage->set8(retvalStorage,retval.c_str());
+    std::string retval = currentNamespace(ctx);
+    retval = findSymbol(ctx, retval, (const char *)identifier->chars);
+    retvalStorage->set8(retvalStorage, retval.c_str());
     return (const char*)retvalStorage->chars;
 }
 std::string qualifyStringType(pProtoJSParser ctx, pANTLR3_STRING identifier){
@@ -284,17 +289,38 @@ void defineImport(pProtoJSParser ctx, pANTLR3_STRING filename) {
     }
 }
 
-void defineType(pProtoJSParser ctx, pANTLR3_STRING id,MessageFlagOrEnum messageFlagOrEnum) {
+/**
+ * defineType at pANTLR3_HASH_TABLE ctx->pProtoJSParser_NamespaceTop->qualifiedTypes #SCOPE_TOP(NameSpace)
+ * for getting namespace in future
+ *      key: pANTLR3_STRING qualifiedType->chars
+ *      value: gMessageType || gFlagType || gEnumType || gGroupType
+ */
+void defineType(pProtoJSParser ctx, pANTLR3_STRING id, MessageFlagOrEnum messageFlagOrEnum) {
     if (SCOPE_TOP(Symbols) == NULL) return;
     SCOPE_TOP(Symbols)->types->put(SCOPE_TOP(Symbols)->types, id->chars, id, NULL);
-    pANTLR3_STRING qualifiedType=stringDup(SCOPE_TOP(NameSpace)->packageDot);
-    for (int i = 0; i < (int)SCOPE_SIZE(Symbols)-1 ; ++i) {
-        qualifiedType->appendS(qualifiedType,((SCOPE_TYPE(Symbols))SCOPE_INSTANCE(Symbols,i))->message);
-        qualifiedType->append8(qualifiedType,".");
-    }
-    qualifiedType->appendS(qualifiedType,id);
-    char * qtyp=strdup((const char*)qualifiedType->chars);
-    SCOPE_TOP(NameSpace)->qualifiedTypes->put(SCOPE_TOP(NameSpace)->qualifiedTypes,qtyp,messageFlagOrEnum==TYPE_ISMESSAGE?gMessageType:(messageFlagOrEnum==TYPE_ISFLAG?gFlagType:gEnumType),NULL);
+    pANTLR3_STRING qualifiedType = stringDup(SCOPE_TOP(NameSpace)->packageDot);
+    for (int i = 0; i < (int)SCOPE_SIZE(Symbols) - 1; ++i) {
+        qualifiedType->appendS(qualifiedType, ((SCOPE_TYPE(Symbols))SCOPE_INSTANCE(Symbols, i))->message);
+        qualifiedType->append8(qualifiedType, ".");
+    };
+    qualifiedType->appendS(qualifiedType, id);
+    char *qtyp = strdup((const char*)qualifiedType->chars);
+
+    void *type =  NULL;
+    switch (messageFlagOrEnum) {
+        case TYPE_ISMESSAGE:
+            type = gMessageType;
+        case TYPE_ISFLAG:
+            type = gFlagType;
+        case TYPE_ISENUM:
+            type = gEnumType;
+        case TYPE_ISGROUP:
+            type = gGroupType;
+        default:
+            break;
+    };
+
+    SCOPE_TOP(NameSpace)->qualifiedTypes->put(SCOPE_TOP(NameSpace)->qualifiedTypes, qtyp, type, NULL);
 }
 
 

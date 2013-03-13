@@ -62,7 +62,8 @@ void defineImport(pProtoJSParser ctx, pANTLR3_STRING filename);
 typedef enum _MessageFlagOrEnum{
     TYPE_ISMESSAGE,
     TYPE_ISENUM,
-    TYPE_ISFLAG
+    TYPE_ISFLAG,
+    TYPE_ISGROUP
 } MessageFlagOrEnum;
 void defineType(pProtoJSParser ctx, pANTLR3_STRING id,MessageFlagOrEnum);
 void defineMessage(pProtoJSParser ctx, pANTLR3_STRING id);
