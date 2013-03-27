@@ -6,15 +6,21 @@ PROTO.Message = function(name, properties) {
 
     /** @constructor */
 	function Message () {
-        if (!PROTO.DefineProperty) {
-            this.values_ = this;
-        } else {
-            this.values_ = {};
-        }
         this.Clear();
         this.message_type_ = name;
 
 		return this;
+    };
+
+    for (var key in properties) {
+        // HACK: classes are currently included alongside properties.
+        if (properties[key].isType) {
+            Message[key] = properties[key];
+			if (!properties[key].isGroup)
+				delete properties[key];
+			
+        };
+		
     };
 
 	Message.prototype = new PROTO.Struct(properties);
@@ -28,9 +34,9 @@ PROTO.Message = function(name, properties) {
     };
 
     Message.Convert = function Convert(val) {
-        if (!(val instanceof Composite)) {
+        if (!(val instanceof Message)) {
             
-            var errmsg = "Unknown Error: Value not instanceof Composite: "+typeof(val)+" : "+val+" instanceof "+(val instanceof Composite);
+            var errmsg = "Unknown Error: Value not instanceof Message: "+typeof(val)+" : "+val+" instanceof "+(val instanceof Message);
             PROTO.warn(errmsg);//this should not happen, but occasionally it does
         }
         return val;
@@ -46,7 +52,7 @@ PROTO.Message = function(name, properties) {
     Message.ParseFromStream = function(stream) {
         var bytearr = PROTO.bytes.ParseFromStream(stream);
         var bas = PROTO.CreateArrayStream(bytearr);
-        var ret = new Composite;
+        var ret = new Message;
         ret.ParseFromStream(bas);
         return ret;
     };

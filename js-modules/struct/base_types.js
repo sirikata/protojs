@@ -344,4 +344,4 @@ function readDouble(stream) {
 	return PROTO.binaryParser.toDouble(arr);
 };
 
-})();
+})(PROTO);

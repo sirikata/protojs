@@ -3,26 +3,16 @@
 (function (PROTO, undefined) {
 
 PROTO.Struct = function (properties) {
-	this.properties_ = {};
+	this.properties_ = properties;
 	this.values_ = {};
 
-    for (var key in properties) {
-        // HACK: classes are currently included alongside properties.
-        if (properties[key].isType) {
-            this[key] = properties[key];
-        } else {
-            this.properties_[key] = properties[key];
-        };
-    };
-
-	//TODO:
     if (PROTO.DefineProperty !== undefined) {
         for (var prop in this.properties_) {
-            (function(prop){
-				PROTO.DefineProperty(this, prop,
-							   function GetProp() { return this.GetField(prop); },
-							   function SetProp(newval) { this.SetField(prop, newval); });
-            })(prop);
+			(function (prop, self) {
+			PROTO.DefineProperty(self, prop,
+						   function GetProp() { return self.GetField(prop); },
+						   function SetProp(newval) { self.SetField(prop, newval); });
+			}) (prop, this);
         };
     };
 };
@@ -59,17 +49,18 @@ PROTO.Struct.prototype = {
 	},
 
 	GetField: function GetField(propname) {
-		PROTO.log(propname);
+		PROTO.log("GetField: " + propname);
 		var ret = this.values_[propname];
-		var type = this.properties_[propname].type();
-		if (ret && type.FromProto) {
+		//TODO:
+		var type = this.properties_[propname].type && this.properties_[propname].type();
+		if (ret && type && type.FromProto) {
 			return type.FromProto(ret);
 		}
 		return ret;
 	},
 
 	SetField: function SetField(propname, value) {
-		PROTO.log(propname + "=" + value);
+		PROTO.log("SetField: " + propname + "=" + value);
 		if (value === undefined || value === null) {
 			this.ClearField(propname);
 		} else {
@@ -157,6 +148,10 @@ PROTO.Struct.prototype = {
 		};
 
 		for (var propname in this.properties_) {
+			// TODO: refactoring
+			if (!this.properties_[propname].type)
+				return;
+
 			if (!this.properties_[propname].type()) {
 				continue; // HACK:
 			};
@@ -187,19 +182,11 @@ PROTO.Struct.prototype = {
 	// RegisterExtension, Extensions, ClearExtension
 	ClearField: function ClearField(propname) {
 		var descriptor = this.properties_[propname];
+
 		if (descriptor.multiplicity == PROTO.repeated) {
 			this.values_[propname] = new PROTO.array(descriptor);
 		} else {
-			var type = descriptor.type();
-			if (type && type.composite) {
-				// Don't special case this. Otherwise, we can't actually
-				// tell whether a composite child was initialized
-				// intentionally or if it just happened here.
-				//this.values_[propname] = new type();
-				delete this.values_[propname];
-			} else {
-				delete this.values_[propname];
-			}
+			delete this.values_[propname];
 		}
 	},
 

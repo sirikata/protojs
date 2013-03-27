@@ -153,7 +153,7 @@ var PROTO = {
 			}
 		}
 		return str;
-	}
+	},
 
 	CreateArrayStream: function(arr) {
 		if (arr instanceof Array) {
@@ -227,15 +227,15 @@ var PROTO = {
 	/** Clones a PROTO type object. Does not work on arbitrary javascript objects.
 	For example, can be used to copy the "bytes" class and make a custom toString method.
 	*/
-	PROTO.cloneType = function(f) {
+	cloneType: function(f) {
 		var ret = {};
 		for (var x in f) {
 			ret[x] = f[x];
 		}
 		return ret;
-	}
+	},
 
-	mergeProperties = function(properties, stream, values) {
+	mergeProperties: function(properties, stream, values) {
 		var fidToProp = {};
 		for (var key in properties) {
 			fidToProp[properties[key].id] = key;
@@ -244,7 +244,7 @@ var PROTO = {
 		var incompleteTuples = {};
 		while (stream.valid()) {
 			nextfid = PROTO.int32.ParseFromStream(stream);
-			PROTO.warn(""+stream.read_pos_+" ; "+stream.array_.length);
+			PROTO.log("" + stream.read_pos_ + " ; " + stream.array_.length);
 			nexttype = nextfid % 8;
 			nextfid >>>= 3;
 			nextpropname = fidToProp[nextfid];
@@ -255,7 +255,7 @@ var PROTO = {
 
 			switch (nexttype) {
 			case PROTO.wiretypes.varint:
-			PROTO.warn("read varint field is "+nextfid);
+				PROTO.log("read varint field is " + nextfid);
 				if (nextprop && nextproptype.wiretype == PROTO.wiretypes.varint) {
 					nextval = nextproptype.ParseFromStream(stream);
 				} else {
@@ -263,7 +263,7 @@ var PROTO = {
 				}
 				break;
 			case PROTO.wiretypes.fixed64:
-			PROTO.warn("read fixed64 field is "+nextfid);
+				PROTO.log("read fixed64 field is " + nextfid);
 				if (nextprop && nextproptype.wiretype == PROTO.wiretypes.fixed64) {
 					nextval = nextproptype.ParseFromStream(stream);
 				} else {
@@ -271,12 +271,12 @@ var PROTO = {
 				}
 				break;
 			case PROTO.wiretypes.lengthdelim:
-			PROTO.warn("read lengthdelim field is "+nextfid);
+				PROTO.log("read lengthdelim field is " + nextfid);
 				if (nextprop) {
 					if (nextproptype.wiretype != PROTO.wiretypes.lengthdelim)
 					{
 						var tup;
-						if (nextproptype.cardinality>1) {
+						if (nextproptype.cardinality > 1) {
 							if (incompleteTuples[nextpropname]===undefined) {
 								incompleteTuples[nextpropname]=new Array();
 							}
@@ -314,6 +314,7 @@ var PROTO = {
 				}
 				break;
 			case PROTO.wiretypes.startgroup:
+				PROTO.log("read group field is " + nextfid);
 				if (nextprop && nextproptype.wiretype === PROTO.wiretypes.startgroup) {
 					nextval = nextproptype.ParseFromStream(stream);
 				} else {
@@ -323,7 +324,7 @@ var PROTO = {
 			case PROTO.wiretypes.endgroup:
 				break;
 			case PROTO.wiretypes.fixed32:
-			PROTO.warn("read fixed32 field is "+nextfid);
+				PROTO.log("read fixed32 field is " + nextfid);
 				if (nextprop && nextproptype.wiretype == PROTO.wiretypes.fixed32) {
 					nextval = nextproptype.ParseFromStream(stream);
 				} else {
@@ -372,7 +373,7 @@ var PROTO = {
 		return true;
 	},
 
-	serializeProperty = function(property, stream, value) {
+	serializeProperty: function(property, stream, value) {
 		var fid = property.id;
 		if (!property.type()) return;
 		if (property.type().cardinality > 1) {
@@ -409,7 +410,7 @@ var PROTO = {
 		}
 	},
 
-	serializeTupleProperty = function(property, stream, value) {
+	serializeTupleProperty: function(property, stream, value) {
 		var fid = property.id;
 		var wiretype = property.type().wiretype;
 		var wireId = fid * 8 + wiretype;
@@ -472,11 +473,11 @@ function init() {
 	* !!All modules should be included in this order!!
 	* - config.js
 	* - parser.js
-	* - types.js
-	* -- stream/base.js
-	* -- stream/**
+	* - i64.js
 	* -- struct/base.js
 	* -- struct/**
+	* -- stream/base.js
+	* -- stream/**
 	**/
 	initLogger();
 };

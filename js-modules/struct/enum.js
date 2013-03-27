@@ -2,20 +2,22 @@
 
 (function (PROTO, undefined) {
 
-PROTO.Enum = function (name, properties) {
-	Enum = function () {
-        enumobj[properties[key]] = key;
-		return this;
-	};
-	var Enum.prototype = new PROTO.Struct(properties);
-
-	var enumobj = new Enum();
-
+//TODO: refactoring
+PROTO.Enum = function (name, values) {
+    var reverseValues = {};
+    var enumobj = {};
     enumobj.isType = true;
-    enumobj.wiretype = PROTO.wiretypes.varint;
+    for (var key in values) {
+        reverseValues[values[key] ] = key;
+        enumobj[key] = values[key];
+        enumobj[values[key]] = key;
+    }
+    enumobj.values = values;
+    enumobj.reverseValues = reverseValues;
 
     enumobj.Convert = function Convert(s) {
         if (typeof s == 'number') {
+            // (reverseValues[s] !== undefined)
             return s;
         }
         if (values[s] !== undefined) {
@@ -23,22 +25,20 @@ PROTO.Enum = function (name, properties) {
         }
         throw "Not a valid "+name+" enumeration value: "+s;
     };
-
     enumobj.toString = function toString(num) {
-        if (this[num]) {
-            return this[num];
+        if (reverseValues[num]) {
+            return reverseValues[num];
         }
         return "" + num;
     };
-
     enumobj.ParseFromStream = function(a,b) {
         var e = PROTO.int32.ParseFromStream(a,b);
         return e;
-    };
-
+    }
     enumobj.SerializeToStream = function(a,b) {
         return PROTO.int32.SerializeToStream(a,b);
-    };
+    }
+    enumobj.wiretype = PROTO.wiretypes.varint;
 
     return enumobj;
 }

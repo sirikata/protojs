@@ -2,7 +2,7 @@
 
 (function (PROTO, undefined) {
 
-I64 = function (msw, lsw, sign) {
+PROTO.I64 = function (msw, lsw, sign) {
     this.msw = msw;
     this.lsw = lsw;
     if (typeof lsw === 'undefined') {
@@ -14,7 +14,7 @@ I64 = function (msw, lsw, sign) {
     this.sign = sign;
 };
 
-I64.prototype = {
+PROTO.I64.prototype = {
     toNumber: function() {
         return (this.msw * PROTO.pow32 + this.lsw) * this.sign;
     },
@@ -60,7 +60,7 @@ I64.prototype = {
         } else {
             local_msw = this.msw;
         };
-        return new I64(local_msw,local_lsw,1);
+        return new PROTO.I64(local_msw,local_lsw,1);
     },
 
     convertFromUnsigned:function() {
@@ -71,9 +71,9 @@ I64.prototype = {
                 local_lsw -= PROTO.pow32;
                 local_msw += 1;
             };
-            return new I64(local_msw, local_lsw, -1);
+            return new PROTO.I64(local_msw, local_lsw, -1);
         };
-        return new I64(this.msw, this.lsw, this.sign);
+        return new PROTO.I64(this.msw, this.lsw, this.sign);
     },
 
 	// TODO: refactoring, tests
