@@ -234,6 +234,7 @@ at_least_one_message_element
     @init
         {
             initSymbolTable(SCOPE_TOP(Symbols), $message::messageName, $message::isExtension);  
+            printf("@init at_least_one_mesage_element \%s\n", $message::messageName->chars);
         }
 	:
     (extensions|reservations)* message_element zero_or_more_message_elements
@@ -370,7 +371,12 @@ field
         int isRepeated;
         int isRequired;
     }
-    @init {$field::defaultValue=NULL; $field::isNumericType=0;$field::isRepeated=0;$field::isRequired=0;}
+    @init {
+        $field::defaultValue = NULL;
+        $field::isNumericType = 0;
+        $field::isRepeated = 0;
+        $field::isRequired = 0;
+    }
     :
       ( ( multiplicity (multiplicitive_type|field_type) field_name EQUALS field_offset (default_value|none) ITEM_TERMINATOR )  
        -> WS["\t"] field_name COLON[":"] WS[" "] BLOCK_OPEN["{"] WS["\n\t\t"] IDENTIFIERCOLON["options:"] WS[" "] default_value none COMMA[","] WS["\n\t\t"] IDENTIFIERCOLON["multiplicity:"] WS[" "] QUALIFIEDIDENTIFIER["PROTO."] multiplicity COMMA[","] WS["\n\t\t"] IDENTIFIERCOLON["type:"] WS[" "] IDENTIFIER["function"] PAREN_OPEN["("]PAREN_CLOSE[")"] BLOCK_OPEN["{"] IDENTIFIER["return"] WS[" "] multiplicitive_type field_type ITEM_TERMINATOR[";"] BLOCK_CLOSE["}"] COMMA[","] WS["\n\t\t"] IDENTIFIERCOLON["id:"] WS[" "] field_offset WS["\n\t"] BLOCK_CLOSE["}"] )
@@ -378,45 +384,89 @@ field
         if (($field::isRepeated||$field::isRequired)&&$field::defaultValue&&$field::defaultValue->len) {
            fprintf(stderr,"error: line \%d: default not allowed for repeated or optional elements in field \%s : \%s\n",$ITEM_TERMINATOR.line,$field::fieldName->chars,$field::defaultValue->chars);
         }
+        printf("@init $field \%s\n", $field::fieldName->chars);
+        //printf($NameSpace::package->chars);
+        //printf("founded \%s \%s\n", $multiplicity.text->chars, $default_value.text->chars);
+        /*
         defineField(ctx, $field::fieldType,$field::fieldName,$field::defaultValue,$field::fieldOffset,$field::isRepeated==0,$field::isRequired,0);
         stringFree($field::fieldName);
         stringFree($field::fieldType);
         stringFree($field::defaultValue);
+        */
     }
 	;
 
 group
+    scope {
+        pANTLR3_STRING groupName;
+    }
+    @init {
+
+        printf("init group $field \%p\n", $field);
+    }
     @after
     {
     	printf("AST: \%s\n", (char *)$group.tree->toStringTree($group.tree)->chars);
     }:
-    (multiplicity GROUP group_name EQUALS group_offset BLOCK_OPEN (at_least_one_message_element)? BLOCK_CLOSE
-    -> WS["\t"] IDENTIFIER["_"] group_name COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Group"] PAREN_OPEN["("] 
+    (multiplicity_group GROUP group_name EQUALS group_offset BLOCK_OPEN (at_least_one_group_element)? BLOCK_CLOSE
+    ->  WS["\t"] group_name COLON[":"] WS[" "] QUALIFIEDIDENTIFIER["PROTO.Group"] PAREN_OPEN["("] 
     	QUOTE["\""] QUALIFIEDIDENTIFIER[qualifyType(ctx, $group_name.text, $group_name.text)] QUOTE["\""]
-    	COMMA[","] at_least_one_message_element
-    	PAREN_CLOSE[")"] )
-    	{
-    		defineType(ctx, $group_name.text, TYPE_ISGROUP);
-        	fprintf(stderr, "Warning: group is deprecated\n");
-    	}
+        COMMA[","] BLOCK_OPEN["{"] WS["\n\t\t"] IDENTIFIERCOLON["id:"] WS[" "] group_offset COMMA[","]
+            WS["\n\t\t"] IDENTIFIERCOLON["type:"] WS[" "] IDENTIFIER["function"] PAREN_OPEN["("]PAREN_CLOSE[")"]
+                BLOCK_OPEN["{"] IDENTIFIER["return"] WS[" "] QUALIFIEDIDENTIFIER[qualifyType(ctx, $group_name.text, $group_name.text)] ITEM_TERMINATOR[";"]
+                BLOCK_CLOSE["}"] WS["\n\t"]
+            BLOCK_CLOSE["}"]
+    	COMMA[","] BLOCK_OPEN["{"] WS["\n\t"] at_least_one_group_element
+    	BLOCK_CLOSE["}"] PAREN_CLOSE[")"])
+        {
+            defineType(ctx, $group_name.text, TYPE_ISGROUP);
+            //fieldJSDecl((char *)"optional", (char *)"name", (char *)"1");
+            fprintf(stderr, "Warning: group is deprecated\n");
+        }
     ;
 
-group_name:
+at_least_one_group_element
+    scope Symbols;
+    @init
+        {
+            printf("at_least_one_group_element\n");
+            initSymbolTable(SCOPE_TOP(Symbols), $group::groupName, 0);
+            printf("@init at_least_one_group_element \%s\n", $group::groupName->chars);
+        }
+	:
+    message_element zero_or_more_message_elements
+    ;
+
+group_name
+    @init {
+        printf("WTF\n");
+    }:
     IDENTIFIER
+    {
+        $group::groupName = stringDup($group_name.text);
+    }
     ;
 
 group_offset:
     integer
     ;
 
-multiplicity : (ProtoJSOPTIONAL){}
-    |(REQUIRED) 
-    { $field::isRequired=1;} 
-               |(REPEATED) 
-    {
+multiplicity:
+    (ProtoJSOPTIONAL)
+    | (REQUIRED) 
+        {
+            $field::isRequired=1;
+        } 
+    | (REPEATED) 
+        {
             $field::isRepeated=1;
-    }
+        }
 	;
+multiplicity_group:
+    ProtoJSOPTIONAL
+    | REQUIRED 
+    | REPEATED
+    ;
 
 none : (DOT?)->IDENTIFIER[($field::isNumericType||isPackable(ctx,$field::fieldType))&&$field::isRepeated&&$NameSpace::isPBJ?"{packed:true}":"{}"] ;
 
@@ -472,7 +522,7 @@ field_type
     {
        $field::isNumericType=(isEnum(ctx,$type_identifier.text)||
                               isFlag(ctx,$type_identifier.text));
-       $field::fieldType=stringDup($type_identifier.text);
+       $field::fieldType = stringDup($type_identifier.text);
     }
     ;
 
@@ -526,7 +576,9 @@ option_pairs
 option_pair 
     scope {pANTLR3_STRING literalValue;}
     : 
-    (DEFAULT EQUALS default_literal_value -> DEFAULT["default_value"] COLON[":"] STRING_LITERAL[$default_literal_value.text->setS($default_literal_value.text,$field::defaultValue)])
+    (DEFAULT EQUALS default_literal_value -> DEFAULT["get default_value"] PAREN_OPEN["("] PAREN_CLOSE[")"] BLOCK_OPEN["{"]
+    STRING_LITERAL["return"] WS[" "] STRING_LITERAL[$default_literal_value.text->setS($default_literal_value.text,$field::defaultValue)]
+    BLOCK_CLOSE["}"])
     |
     (IDENTIFIER EQUALS option_literal_value 
        -> {strcmp((char*)$IDENTIFIER.text->chars,"packed")==0&&$NameSpace::isPBJ}? 
