@@ -322,6 +322,7 @@ var PROTO = {
 				};
 				break;
 			case PROTO.wiretypes.endgroup:
+				PROTO.log("end group field is " + nextfid);
 				break;
 			case PROTO.wiretypes.fixed32:
 				PROTO.log("read fixed32 field is " + nextfid);

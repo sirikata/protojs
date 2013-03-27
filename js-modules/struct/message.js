@@ -9,6 +9,10 @@ PROTO.Message = function(name, properties) {
         this.Clear();
         this.message_type_ = name;
 
+		// TODO: refactoring:
+		this.__defineGetter__("values", function () {
+			return this.__proto__.values_;
+		});
 		return this;
     };
 
@@ -18,9 +22,7 @@ PROTO.Message = function(name, properties) {
             Message[key] = properties[key];
 			if (!properties[key].isGroup)
 				delete properties[key];
-			
         };
-		
     };
 
 	Message.prototype = new PROTO.Struct(properties);
@@ -52,7 +54,7 @@ PROTO.Message = function(name, properties) {
     Message.ParseFromStream = function(stream) {
         var bytearr = PROTO.bytes.ParseFromStream(stream);
         var bas = PROTO.CreateArrayStream(bytearr);
-        var ret = new Message;
+        var ret = new Message();
         ret.ParseFromStream(bas);
         return ret;
     };

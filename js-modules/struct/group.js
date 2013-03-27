@@ -1,7 +1,13 @@
 PROTO.Group = function (name, properties, fields) {
 	function Group () {
-		return this;
+		this.Clear();
 		this.group_type_ = name;
+
+		// TODO: refactoring:
+		this.__defineGetter__("values", function () {
+			return this.__proto__.values_;
+		});
+		return this;
 	};
 
 	var key;
@@ -28,10 +34,8 @@ PROTO.Group = function (name, properties, fields) {
 	};
 
 	Group.ParseFromStream = function(stream) {
-        var bytearr = PROTO.bytes.ParseFromStream(stream);
-        var bas = PROTO.CreateArrayStream(bytearr);
-        var ret = new Group;
-        ret.ParseFromStream(bas);
+        var ret = new Group();
+        ret.ParseFromStream(stream);
         return ret;
 	};
 	Group.Convert = function Convert(val) {
