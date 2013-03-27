@@ -75,6 +75,7 @@ void defineExtensionEnd(pProtoJSParser ctx, pANTLR3_STRING id);
 void defineEnumValue(pProtoJSParser ctx, pANTLR3_STRING enumName, pANTLR3_LIST enumList, pANTLR3_STRING id,  pANTLR3_STRING value);
 void defineFlagValue(pProtoJSParser ctx, pANTLR3_STRING flagName, pANTLR3_LIST flagList, pANTLR3_STRING id,  pANTLR3_STRING value);
 
+
 int isEnum(pProtoJSParser ctx, pANTLR3_STRING identifier);
 int isFlag(pProtoJSParser ctx, pANTLR3_STRING identifier);
 
@@ -95,6 +96,9 @@ pANTLR3_STRING defaultValuePreprocess(pProtoJSParser ctx, pANTLR3_STRING type, p
 pANTLR3_STRING defaultValueIdentifierPreprocess(pProtoJSParser ctx, pANTLR3_STRING type, pANTLR3_STRING value);
 ANTLR3_BOOLEAN isTypeName(pProtoJSParser ctx, pANTLR3_UINT8 name);
 ANTLR3_BOOLEAN isPackable(pProtoJSParser ctx, pANTLR3_STRING identifier);
+
+pANTLR3_STRING fieldJSDecl(const char *mult, const char *name, const char *default_value);
+
 #ifdef __cplusplus
 }
 #endif 

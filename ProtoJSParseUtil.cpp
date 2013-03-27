@@ -144,12 +144,14 @@ void  initSymbolTable(SCOPE_TYPE(Symbols) symtab, pANTLR3_STRING messageName, in
     if (messageName&&symtab->message==NULL&&!isExtension) {
         symtab->message=stringDup(messageName);
     }
+    printf("initSymbolTable\n");
     symtab->free = freeSymbolTable;
 }
 pANTLR3_STRING jsPackageDefine(pANTLR3_STRING id, pANTLR3_STRING id_package){
     char * where=(char*)id_package->chars;
     char *whereEnd=(char*)id_package->chars;
     std::string retval;
+
     do {
         whereEnd=(whereEnd!=NULL&&whereEnd[0]!='\0')?strchr(whereEnd+1,'.'):NULL;
         std::string package=std::string(where,whereEnd?whereEnd-where:id_package->len);
@@ -163,8 +165,8 @@ pANTLR3_STRING jsPackageDefine(pANTLR3_STRING id, pANTLR3_STRING id_package){
         retval+=" = {};}\n";
     }while (whereEnd);
     {
-        pANTLR3_STRING sretval=id->factory->newPtr(id->factory,(pANTLR3_UINT8)retval.data(),retval.length());
-        id->setS(id,sretval);
+        pANTLR3_STRING sretval = id->factory->newPtr(id->factory, (pANTLR3_UINT8)retval.data(), retval.length());
+        id->setS(id, sretval);
         stringFree(sretval);
     }
     return id;
@@ -179,8 +181,9 @@ std::string currentNamespace(pProtoJSParser ctx) {
     return retval;
 }
 std::string findSymbol(pProtoJSParser ctx, std::string nameSpace, std::string identifier) {
+    std::string retval;
     do {
-        std::string retval = nameSpace + identifier;
+        retval = nameSpace + identifier;
         if (SCOPE_TOP(NameSpace)->qualifiedTypes->get(SCOPE_TOP(NameSpace)->qualifiedTypes, (void*)retval.c_str()) != NULL)
         {
             return retval;
@@ -195,10 +198,15 @@ std::string findSymbol(pProtoJSParser ctx, std::string nameSpace, std::string id
             break;
         };
     } while (true);
-    return identifier;
+    printf("Namespace_SCOPE_TOP %s\n", SCOPE_TOP(NameSpace)->packageDot->chars);
+    retval = reinterpret_cast<char *>(SCOPE_TOP(NameSpace)->packageDot->chars);
+    retval += identifier;
+    return retval;
 }
 const char* qualifyType(pProtoJSParser ctx, pANTLR3_STRING retvalStorage, pANTLR3_STRING identifier){
+    printf("qualifyType\n");
     std::string retval = currentNamespace(ctx);
+    printf("currentNamespace: %s\n", retval.c_str());
     retval = findSymbol(ctx, retval, (const char *)identifier->chars);
     retvalStorage->set8(retvalStorage, retval.c_str());
     return (const char*)retvalStorage->chars;
@@ -469,14 +477,17 @@ static void closeNamespace(pProtoJSParser ctx) {
 pANTLR3_STRING defaultValuePreprocess(pProtoJSParser ctx, pANTLR3_STRING type, pANTLR3_STRING value){
     return stringDup(value);
 }
+
 pANTLR3_STRING defaultValueIdentifierPreprocess(pProtoJSParser ctx, pANTLR3_STRING type, pANTLR3_STRING value){
     
-    pANTLR3_STRING retval=stringDup(type);
-    qualifyType(ctx,retval,type);
-    retval->append8(retval,".");
-    retval->appendS(retval,value);
+    printf("%s %s\n", type->chars, value->chars);
+    pANTLR3_STRING retval = stringDup(type);
+    qualifyType(ctx,retval, type);
+    retval->append8(retval, ".");
+    retval->appendS(retval, value);
     return retval;
 }
+
 static std::ostream& sendTabs(pProtoJSParser ctx,int offset) {
     int num=SCOPE_SIZE(Symbols)+offset-1;
     int i;
@@ -1011,6 +1022,28 @@ std::ostream& printCsFlags(std::ostream&fp, pANTLR3_HASH_TABLE flag_all_on,pANTL
     }
     return fp;
 }
+
+pANTLR3_STRING fieldJSDecl(const char *mult, const char *name, const char *default_value) {
+    int N = 1000;
+    char str[1000] = {0};
+    //char *text = "\t field_name: {\n\t\toptions: default_value none,\n\t\tmultiplicity: PROTO.multiplicity,\n\t\ttype: function(){return multiplicitive_type field_type;},\n\t\tid: field_offset\n\t}"; 
+    char *tmpl = "\
+    %s: {\n\
+        options: %s none,\n\
+        multiplicity: PROTO.%s,\n\
+        type: function() { return multiplicitive_type field_type;},\n\
+        id: field_offset\n\
+    }"; 
+
+    snprintf(str, N, tmpl, name, default_value, mult);
+    printf(str);
+
+    pANTLR3_STRING antlr3_decl;
+    //antlr3_decl = antlr3_decl->factory->newRaw(antlr3_decl->factory);
+    //antlr3_decl->append8(antlr3_decl, str);
+    return antlr3_decl;
+}
+
 pANTLR3_STRING toFirstUpper(pANTLR3_STRING name) {
     pANTLR3_STRING uname=stringDup(name);
     uname->chars[0]=toupper(name->chars[0]);
