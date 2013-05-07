@@ -1767,6 +1767,12 @@ PROTO.Message = function(name, properties) {
             }
             return false;
         },
+        HasProperty: function HasProperty(propname) {
+            return this.properties_[propname] !== undefined;
+        },
+        GetProperty: function GetProperty(propname) {
+            return this.properties_[propname];
+        },
         formatValue: function(level, spaces, propname, val) {
             var str = spaces + propname;
             var type = this.properties_[propname].type();
