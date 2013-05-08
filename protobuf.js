@@ -1767,6 +1767,12 @@ PROTO.Message = function(name, properties) {
             }
             return false;
         },
+        HasProperty: function HasProperty(propname) {
+            return this.properties_[propname] !== undefined;
+        },
+        GetProperty: function GetProperty(propname) {
+            return this.properties_[propname];
+        },
         formatValue: function(level, spaces, propname, val) {
             var str = spaces + propname;
             var type = this.properties_[propname].type();
@@ -1834,8 +1840,24 @@ PROTO.Message = function(name, properties) {
             })(prop);
         }
     }
+
+    PROTO.Message._registeredMessages[name] = Composite;
     return Composite;
 };
+
+/** Constructs a message dynamically based on its name
+ *
+ *  @param {string} name Name of the message to be created
+ *  @return New message or undefined if such message doesn't exist.
+ */
+PROTO.Message.Create = function(name) {
+    if (PROTO.Message._registeredMessages[name])
+        return new PROTO.Message._registeredMessages[name];
+    else
+        return undefined;
+}
+
+PROTO.Message._registeredMessages = {};
 
 /** Builds an enumeration type with a mapping of values.
 @param {number=} bits  Preferred size of the enum (unused at the moment). */
