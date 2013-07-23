@@ -1,0 +1,16 @@
+{
+  "name": "protojs",
+  "description": "Protojs is a BSD-licensed protocol buffer library written in JavaScript",
+  "keywords": ["protobuf", "protocol", "buffers" "protojs"],
+  "version": "2.3.0",
+  "main": "protobuf.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "homepage": "http://sirikata.com/",
+  "license": "BSD"
+}
