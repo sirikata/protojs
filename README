@@ -1,6 +1,10 @@
 Protojs is a BSD-licensed protocol buffer library written in JavaScript.
 http://github.com/sirikata/protojs
 
+NOTE: If you're starting a new project, we recommend newer, better
+supported and maintained options, e.g. https://github.com/dcodeIO/ProtoBuf.js
+
+
 ==== Features:
 
 * Fast compiler using ANTLR
@@ -71,4 +75,3 @@ Send mail to Patrick Horn <patrick.horn@gmail.com>, or find me at
 irc.freenode.net #sirikata
 
 If you have a cool feature to add, feel free to fork the project.
-
