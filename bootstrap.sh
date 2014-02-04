@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -ex
 
 if [ -e antlr-3.2.jar ]; then
 	true
@@ -20,7 +20,7 @@ if [ -e antlr-3.2/lib/libantlr3c.a ]; then
 else
 	MYPWD="$PWD"
         FLAGS64=
-        if uname -m | grep x86_64 && ! uname | grep Darwin; then
+        if uname -m | grep x86_64; then
             FLAGS64=--enable-64bit ;
         fi
 	tar -zxf libantlr3c-3.2.tar.gz && \
