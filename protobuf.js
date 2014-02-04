@@ -45,6 +45,15 @@ PROTO.IsArray = (function() {
   }
 })();
 
+/**
+ * @param {string} s
+ */
+PROTO.warn = function (s) {
+    if (typeof(self.console)!="undefined" && self.console.log) {
+        self.console.log(s);            
+    }
+};
+
 PROTO.DefineProperty = (function () {
         var DefineProperty;
         if (typeof(Object.defineProperty) != "undefined") {
@@ -112,14 +121,6 @@ PROTO.wiretypes = {
 PROTO.optional = 'optional';
 PROTO.repeated = 'repeated';
 PROTO.required = 'required';
-/**
- * @param {string} s
- */
-PROTO.warn = function (s) {
-    if (typeof(self.console)!="undefined" && self.console.log) {
-        self.console.log(s);            
-    }
-};
 
 /**
  * @constructor
